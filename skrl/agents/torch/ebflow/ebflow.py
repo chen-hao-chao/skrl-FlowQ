@@ -101,7 +101,7 @@ class EBFlow(Agent):
         self.checkpoint_modules["policy"] = self.policy
         self.checkpoint_modules["target_policy"] = self.target_policy
 
-        if self.target_critic_1 is not None and self.target_critic_2 is not None:
+        if self.target_policy is not None:
             # freeze target networks with respect to optimizers (update via .update_parameters())
             self.target_policy.freeze_parameters(True)
             # update target networks (hard update)
@@ -114,7 +114,7 @@ class EBFlow(Agent):
         self._discount_factor = self.cfg["discount_factor"]
         self._polyak = self.cfg["polyak"]
 
-        self._learning_rate = self.cfg["critic_learning_rate"]
+        self._learning_rate = self.cfg["learning_rate"]
         self._learning_rate_scheduler = self.cfg["learning_rate_scheduler"]
 
         self._state_preprocessor = self.cfg["state_preprocessor"]
@@ -129,7 +129,7 @@ class EBFlow(Agent):
         self._rewards_shaper = self.cfg["rewards_shaper"]
 
         # set up optimizers and learning rate schedulers
-        if self.policy is not None and self.critic_1 is not None and self.critic_2 is not None:
+        if self.policy is not None:
             self.policy_optimizer = torch.optim.Adam(self.policy.parameters(), lr=self._learning_rate)
 
             if self._learning_rate_scheduler is not None:
@@ -274,23 +274,23 @@ class EBFlow(Agent):
 
             # compute target values
             with torch.no_grad():
-                self.policy_old.eval()
-                v_old = self.policy.get_v({"states": torch.cat((sampled_next_states, sampled_next_states), dim=0)}, role="target_policy")
+                self.target_policy.eval()
+                v_old = self.target_policy.get_v(torch.cat((sampled_next_states, sampled_next_states), dim=0))
                 target_q_values = torch.min(v_old[:v_old.shape[0]//2], v_old[v_old.shape[0]//2:])
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
             # compute critic loss
-            current_q, _ = self.policy.get_qv(torch.cat((sampled_states, sampled_states), dim=0), torch.cat((sampled_actions, sampled_actions), dim=0), role="target_policy")
+            current_q, _ = self.policy.get_qv(torch.cat((sampled_states, sampled_states), dim=0), torch.cat((sampled_actions, sampled_actions), dim=0))
             target_values = torch.cat((target_values, target_values), dim=0)
 
             critic_loss = F.mse_loss(current_q, target_values)
 
             # optimization step (critic)
-            self.critic_optimizer.zero_grad()
+            self.policy_optimizer.zero_grad()
             critic_loss.backward()
             if self._grad_norm_clip > 0:
-                torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self.args.grad_clip_critic)
-            self.critic_optimizer.step()
+                torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
+            self.policy_optimizer.step()
 
             # update target networks
             self.target_policy.update_parameters(self.policy, polyak=self._polyak)

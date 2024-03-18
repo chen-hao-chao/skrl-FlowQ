@@ -42,8 +42,9 @@ class FlowMixin:
             >>> print(actions.shape, log_prob.shape, outputs["mean_actions"].shape)
             torch.Size([4096, 8]) torch.Size([4096, 1]) torch.Size([4096, 8])
         """
-        obs = torch.as_tensor(inputs, dtype=torch.float32, device=self.device)
-        eps = torch.randn((inputs.shape[0],) + self.prior.shape, dtype=obs.dtype, device=obs.device)
+        obs_ = inputs['states']
+        obs = torch.as_tensor(obs_, dtype=torch.float32, device=self.device)
+        eps = torch.randn((obs_.shape[0],) + self.prior.shape, dtype=obs.dtype, device=obs.device)
         act, _ = self.prior.get_mean_std(eps, context=obs)
         log_prob = self.prior.log_prob(act, context=obs)
         actions, log_det = self.forward(obs=obs, act=act)
@@ -87,8 +88,8 @@ class FlowMixin:
         return q[:, None], v[:, None]
     
     def get_v(self, obs):
-        act = torch.zeros((obs.shape[0], self.action_shape), device=self.device)
-        v = torch.zeros((act.shape[0]), device=act.device)
+        act = torch.zeros((obs.shape[0], self.num_actions), device=self.device)
+        v = torch.zeros((obs.shape[0]), device=act.device)
         z = act
         for flow in self.flows[::-1]:
             z, _, v_ = flow.get_qv(z, context=obs)

@@ -26,7 +26,7 @@ class Policy(FlowMixin, Model):
     def __init__(self, observation_space, action_space, device, alpha, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
         FlowMixin.__init__(self, reduction)
-        flows, q0 = self.init_Coupling()
+        flows, q0 = self.init_Coupling(self.num_observations, self.num_actions)
         self.flows = nn.ModuleList(flows).to(self.device)
         self.prior = q0.to(self.device)
         self.alpha = alpha
@@ -94,8 +94,8 @@ memory = RandomMemory(memory_size=20000, num_envs=env.num_envs, device=device, r
 # SAC requires 5 models, visit its documentation for more details
 # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
 models = {}
-models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=0.2, clip_actions=True)
-models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=0.2, clip_actions=True)
+models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=0.2)
+models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=0.2)
 
 # initialize models' parameters (weights and biases)
 # for model in models.values():
