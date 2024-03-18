@@ -51,7 +51,7 @@ class Shared(GaussianMixin, DeterministicMixin, Model):
 
 
 # load and wrap the Omniverse Isaac Gym environment
-env = load_omniverse_isaacgym_env(task_name="Ant")
+env = load_omniverse_isaacgym_env(task_name="Ant", headless=True)
 env = wrap_env(env)
 
 device = env.device

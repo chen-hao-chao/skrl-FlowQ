@@ -50,7 +50,7 @@ class Critic(DeterministicMixin, Model):
 
 
 # load and wrap the Omniverse Isaac Gym environment
-env = load_omniverse_isaacgym_env(task_name="Ant", num_envs=64)
+env = load_omniverse_isaacgym_env(task_name="Ant", headless=True, num_envs=64)
 env = wrap_env(env)
 
 device = env.device
