@@ -9,84 +9,8 @@ from torch.distributions import Normal
 
 class FlowMixin:
     def __init__(self,
-                 clip_actions: bool = False,
-                 clip_log_std: bool = True,
-                 min_log_std: float = -20,
-                 max_log_std: float = 2,
                  reduction: str = "sum",
                  role: str = "") -> None:
-        """Gaussian mixin model (stochastic model)
-
-        :param clip_actions: Flag to indicate whether the actions should be clipped to the action space (default: ``False``)
-        :type clip_actions: bool, optional
-        :param clip_log_std: Flag to indicate whether the log standard deviations should be clipped (default: ``True``)
-        :type clip_log_std: bool, optional
-        :param min_log_std: Minimum value of the log standard deviation if ``clip_log_std`` is True (default: ``-20``)
-        :type min_log_std: float, optional
-        :param max_log_std: Maximum value of the log standard deviation if ``clip_log_std`` is True (default: ``2``)
-        :type max_log_std: float, optional
-        :param reduction: Reduction method for returning the log probability density function: (default: ``"sum"``).
-                          Supported values are ``"mean"``, ``"sum"``, ``"prod"`` and ``"none"``. If "``none"``, the log probability density
-                          function is returned as a tensor of shape ``(num_samples, num_actions)`` instead of ``(num_samples, 1)``
-        :type reduction: str, optional
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
-
-        :raises ValueError: If the reduction method is not valid
-
-        Example::
-
-            # define the model
-            >>> import torch
-            >>> import torch.nn as nn
-            >>> from skrl.models.torch import Model, GaussianMixin
-            >>>
-            >>> class Policy(GaussianMixin, Model):
-            ...     def __init__(self, observation_space, action_space, device="cuda:0",
-            ...                  clip_actions=False, clip_log_std=True, min_log_std=-20, max_log_std=2, reduction="sum"):
-            ...         Model.__init__(self, observation_space, action_space, device)
-            ...         GaussianMixin.__init__(self, clip_actions, clip_log_std, min_log_std, max_log_std, reduction)
-            ...
-            ...         self.net = nn.Sequential(nn.Linear(self.num_observations, 32),
-            ...                                  nn.ELU(),
-            ...                                  nn.Linear(32, 32),
-            ...                                  nn.ELU(),
-            ...                                  nn.Linear(32, self.num_actions))
-            ...         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
-            ...
-            ...     def compute(self, inputs, role):
-            ...         return self.net(inputs["states"]), self.log_std_parameter, {}
-            ...
-            >>> # given an observation_space: gym.spaces.Box with shape (60,)
-            >>> # and an action_space: gym.spaces.Box with shape (8,)
-            >>> model = Policy(observation_space, action_space)
-            >>>
-            >>> print(model)
-            Policy(
-              (net): Sequential(
-                (0): Linear(in_features=60, out_features=32, bias=True)
-                (1): ELU(alpha=1.0)
-                (2): Linear(in_features=32, out_features=32, bias=True)
-                (3): ELU(alpha=1.0)
-                (4): Linear(in_features=32, out_features=8, bias=True)
-              )
-            )
-        """
-        self._clip_actions = clip_actions and (issubclass(type(self.action_space), gym.Space) or \
-            issubclass(type(self.action_space), gymnasium.Space))
-
-        if self._clip_actions:
-            self._clip_actions_min = torch.tensor(self.action_space.low, device=self.device, dtype=torch.float32)
-            self._clip_actions_max = torch.tensor(self.action_space.high, device=self.device, dtype=torch.float32)
-
-        self._clip_log_std = clip_log_std
-        self._log_std_min = min_log_std
-        self._log_std_max = max_log_std
-
-        self._log_std = None
-        self._num_samples = None
-        self._distribution = None
-
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
         self._reduction = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
@@ -118,82 +42,58 @@ class FlowMixin:
             >>> print(actions.shape, log_prob.shape, outputs["mean_actions"].shape)
             torch.Size([4096, 8]) torch.Size([4096, 1]) torch.Size([4096, 8])
         """
-        # map from states/observations to mean actions and log standard deviations
-        mean_actions, log_std, outputs = self.compute(inputs, role)
+        obs = torch.as_tensor(inputs, dtype=torch.float32, device=self.device)
+        eps = torch.randn((inputs.shape[0],) + self.prior.shape, dtype=obs.dtype, device=obs.device)
+        act, _ = self.prior.get_mean_std(eps, context=obs)
+        log_prob = self.prior.log_prob(act, context=obs)
+        actions, log_det = self.forward(obs=obs, act=act)
+        log_prob -= log_det
+        return actions, log_prob, actions
 
-        # clamp log standard deviations
-        if self._clip_log_std:
-            log_std = torch.clamp(log_std, self._log_std_min, self._log_std_max)
-
-        self._log_std = log_std
-        self._num_samples = mean_actions.shape[0]
-
-        # distribution
-        self._distribution = Normal(mean_actions, log_std.exp())
-
-        # sample using the reparameterization trick
-        actions = self._distribution.rsample()
-
-        # clip actions
-        if self._clip_actions:
-            actions = torch.clamp(actions, min=self._clip_actions_min, max=self._clip_actions_max)
-
-        # log of the probability density function
-        log_prob = self._distribution.log_prob(inputs.get("taken_actions", actions))
-        if self._reduction is not None:
-            log_prob = self._reduction(log_prob, dim=-1)
-        if log_prob.dim() != actions.dim():
-            log_prob = log_prob.unsqueeze(-1)
-
-        outputs["mean_actions"] = mean_actions
-        return actions, log_prob, outputs
-
-    def get_entropy(self, role: str = "") -> torch.Tensor:
-        """Compute and return the entropy of the model
-
-        :return: Entropy of the model
-        :rtype: torch.Tensor
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
-
-        Example::
-
-            >>> entropy = model.get_entropy()
-            >>> print(entropy.shape)
-            torch.Size([4096, 8])
-        """
-        if self._distribution is None:
-            return torch.tensor(0.0, device=self.device)
-        return self._distribution.entropy().to(self.device)
-
-    def get_log_std(self, role: str = "") -> torch.Tensor:
-        """Return the log standard deviation of the model
-
-        :return: Log standard deviation of the model
-        :rtype: torch.Tensor
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
-
-        Example::
-
-            >>> log_std = model.get_log_std()
-            >>> print(log_std.shape)
-            torch.Size([4096, 8])
-        """
-        return self._log_std.repeat(self._num_samples, 1)
-
-    def distribution(self, role: str = "") -> torch.distributions.Normal:
-        """Get the current distribution of the model
-
-        :return: Distribution of the model
-        :rtype: torch.distributions.Normal
-        :param role: Role play by the model (default: ``""``)
-        :type role: str, optional
-
-        Example::
-
-            >>> distribution = model.distribution()
-            >>> print(distribution)
-            Normal(loc: torch.Size([4096, 8]), scale: torch.Size([4096, 8]))
-        """
-        return self._distribution
+    def forward(self, obs, act):
+        log_q = torch.zeros(act.shape[0], dtype=act.dtype, device=act.device)
+        z = act
+        for flow in self.flows:
+            z, log_det = flow.forward(z, context=obs)
+            log_q -= log_det
+        return z, log_q
+    
+    def inverse(self, obs, act):
+        log_q = torch.zeros(act.shape[0], dtype=act.dtype, device=act.device)
+        z = act
+        for flow in self.flows[::-1]:
+            z, log_det = flow.inverse(z, context=obs)
+            log_q += log_det
+        return z, log_q
+    
+    def log_prob(self, obs, act):
+        z, log_q = self.inverse(obs=obs, act=act)
+        log_q += self.prior.log_prob(z, context=obs)
+        return log_q
+    
+    def get_qv(self, obs, act):
+        q = torch.zeros((act.shape[0]), device=act.device)
+        v = torch.zeros((act.shape[0]), device=act.device)
+        z = act
+        for flow in self.flows[::-1]:
+            z, q_, v_ = flow.get_qv(z, context=obs)
+            q += q_
+            v += v_
+        q_, v_ = self.prior.get_qv(z, context=obs)
+        q += q_
+        v += v_
+        q = q * self.alpha
+        v = v * self.alpha
+        return q[:, None], v[:, None]
+    
+    def get_v(self, obs):
+        act = torch.zeros((obs.shape[0], self.action_shape), device=self.device)
+        v = torch.zeros((act.shape[0]), device=act.device)
+        z = act
+        for flow in self.flows[::-1]:
+            z, _, v_ = flow.get_qv(z, context=obs)
+            v += v_
+        _, v_ = self.prior.get_qv(z, context=obs)
+        v += v_
+        v = v * self.alpha
+        return v[:, None]
