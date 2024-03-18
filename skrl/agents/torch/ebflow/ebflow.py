@@ -173,6 +173,7 @@ class EBFlow(Agent):
         :return: Actions
         :rtype: torch.Tensor
         """
+        self.policy.eval()
         # sample random actions
         # TODO, check for stochasticity
         if timestep < self._random_timesteps:
@@ -279,15 +280,16 @@ class EBFlow(Agent):
                 target_q_values = torch.min(v_old[:v_old.shape[0]//2], v_old[v_old.shape[0]//2:])
                 target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
+            self.policy.train()
             # compute critic loss
             current_q, _ = self.policy.get_qv(torch.cat((sampled_states, sampled_states), dim=0), torch.cat((sampled_actions, sampled_actions), dim=0))
             target_values = torch.cat((target_values, target_values), dim=0)
 
-            critic_loss = F.mse_loss(current_q, target_values)
+            loss = F.mse_loss(current_q, target_values) / 2
 
             # optimization step (critic)
             self.policy_optimizer.zero_grad()
-            critic_loss.backward()
+            loss.backward()
             if self._grad_norm_clip > 0:
                 torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
             self.policy_optimizer.step()
@@ -301,7 +303,7 @@ class EBFlow(Agent):
 
             # record data
             if self.write_interval > 0:
-                self.track_data("Loss / Critic loss", critic_loss.item())
+                self.track_data("Loss / Critic loss", loss.item())
 
                 self.track_data("Target / Target (max)", torch.max(target_values).item())
                 self.track_data("Target / Target (min)", torch.min(target_values).item())
@@ -309,4 +311,3 @@ class EBFlow(Agent):
 
                 if self._learning_rate_scheduler:
                     self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
-                    self.track_data("Learning / Critic learning rate", self.critic_scheduler.get_last_lr()[0])

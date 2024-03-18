@@ -8,14 +8,26 @@ from torch.distributions import Normal
 
 
 class FlowMixin:
-    def __init__(self,
-                 reduction: str = "sum",
-                 role: str = "") -> None:
+    def __init__(self, reduction: str = "sum") -> None:
         if reduction not in ["mean", "sum", "prod", "none"]:
             raise ValueError("reduction must be one of 'mean', 'sum', 'prod' or 'none'")
         self._reduction = torch.mean if reduction == "mean" else torch.sum if reduction == "sum" \
             else torch.prod if reduction == "prod" else None
 
+    def unit_test(self, num_samples=10, scale=1):
+        self.eval()
+        state = torch.randn((num_samples, self.num_observations), device=self.device)
+        action = torch.clamp(torch.randn((num_samples, self.num_actions), device=self.device), min=-scale, max=scale)
+        state = torch.cat((state, state), dim=0)
+        action = torch.cat((action, action), dim=0)
+        log_prob = self.log_prob(obs=state, act=action)
+        q, v = self.get_qv(obs=state, act=action)
+        v_ = self.get_v(obs=state)
+        assert torch.allclose(log_prob * self.alpha, ((q-v)).squeeze())
+        print("Pass Test 1: (q - v) = alpha * log p")
+        assert torch.allclose(v, v_)
+        print("Pass Test 2: v is a constant w.r.t. a")
+        
     def act(self,
             inputs: Mapping[str, Union[torch.Tensor, Any]],
             role: str = "") -> Tuple[torch.Tensor, Union[torch.Tensor, None], Mapping[str, Union[torch.Tensor, Any]]]:
@@ -44,11 +56,13 @@ class FlowMixin:
         """
         obs_ = inputs['states']
         obs = torch.as_tensor(obs_, dtype=torch.float32, device=self.device)
-        eps = torch.randn((obs_.shape[0],) + self.prior.shape, dtype=obs.dtype, device=obs.device)
-        act, _ = self.prior.get_mean_std(eps, context=obs)
-        log_prob = self.prior.log_prob(act, context=obs)
+        # eps = torch.randn((obs_.shape[0],) + self.prior.shape, dtype=obs.dtype, device=obs.device)
+        # act, _ = self.prior.get_mean_std(eps, context=obs)
+        # log_prob = self.prior.log_prob(act, context=obs)
+        act, log_prob = self.prior.sample(num_samples=obs_.shape[0], context=obs)
         actions, log_det = self.forward(obs=obs, act=act)
         log_prob -= log_det
+        # print(act)
         return actions, log_prob, actions
 
     def forward(self, obs, act):

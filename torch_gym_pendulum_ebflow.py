@@ -30,6 +30,7 @@ class Policy(FlowMixin, Model):
         self.flows = nn.ModuleList(flows).to(self.device)
         self.prior = q0.to(self.device)
         self.alpha = alpha
+        self.unit_test(num_samples=10, scale=0.5)
 
     def init_Coupling(self, state_sizes, action_sizes):
         init_zeros = True
@@ -69,7 +70,7 @@ class Policy(FlowMixin, Model):
         learnable_scale_1 = MLP(scale_list, init_zeros=init_zeros, activation=activation, dropout_rate=dropout_rate_scale, layernorm=layer_norm_scale)
         learnable_scale_2 = MLP(scale_list, init_zeros=init_zeros, activation=activation, dropout_rate=dropout_rate_scale, layernorm=layer_norm_scale)
         flows += [CondScaling(learnable_scale_1, learnable_scale_2)]
-        flows += [Preprocessing(option='atanh', clip=True)]
+        flows += [Preprocessing(option='scaleatanh', clip=True, scale=0.5)]
         return flows, q0
 
 
@@ -82,13 +83,10 @@ except gym.error.DeprecatedEnv as e:
     print("Pendulum-v1 not found. Trying {}".format(env_id))
     env = gym.make(env_id)
 env = wrap_env(env)
-
 device = env.device
-
 
 # instantiate a memory as experience replay
 memory = RandomMemory(memory_size=20000, num_envs=env.num_envs, device=device, replacement=False)
-
 
 # instantiate the agent's models (function approximators).
 # SAC requires 5 models, visit its documentation for more details
@@ -97,18 +95,13 @@ models = {}
 models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=0.2)
 models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=0.2)
 
-# initialize models' parameters (weights and biases)
-# for model in models.values():
-#     model.init_parameters(method_name="normal_", mean=0.0, std=0.1)
-
-
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
 cfg = EBFlow_DEFAULT_CONFIG.copy()
 cfg["discount_factor"] = 0.98
 cfg["batch_size"] = 100
 cfg["random_timesteps"] = 0
-cfg["learning_starts"] = 1000
+cfg["learning_starts"] = 1 #1000
 cfg["learn_entropy"] = True
 # logging to TensorBoard and write checkpoints (in timesteps)
 cfg["experiment"]["write_interval"] = 75
