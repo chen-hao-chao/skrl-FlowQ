@@ -47,3 +47,13 @@ To cite this library in publications, please use the following reference:
   url     = {http://jmlr.org/papers/v24/23-0112.html}
 }
 ```
+
+### Reproducing EBFlow
+<p align="center">
+  <img src="https://hackmd.io/_uploads/S1IJlTICa.png" alt="ebflow" width="40%">
+</p>
+
+```
+// Off-policy EBFlow on Issac-Ant
+PYTHON_PATH torch_ant_ebflow_off.py
+```

@@ -39,6 +39,8 @@ EBFlow_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "is_on_policy": False,   # Set true for on-policy updates
+
     "experiment": {
         "base_directory": "",       # base directory for the experiment
         "experiment_name": "",      # experiment name
@@ -93,6 +95,9 @@ class EBFlow(Agent):
                          device=device,
                          cfg=_cfg)
 
+        # flag for on-policy version
+        self._is_on_policy = self.cfg["is_on_policy"]
+
         # models
         self.policy = self.models.get("policy", None)
         self.target_policy = self.models.get("target_policy", None)
@@ -144,21 +149,33 @@ class EBFlow(Agent):
         else:
             self._state_preprocessor = self._empty_preprocessor
 
+        self.current_noises = None
+
     def init(self, trainer_cfg: Optional[Mapping[str, Any]] = None) -> None:
         """Initialize the agent
         """
         super().init(trainer_cfg=trainer_cfg)
         self.set_mode("eval")
 
-        # create tensors in memory
-        if self.memory is not None:
-            self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
-            self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
-            self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
-            self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
-
-            self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
+        if self._is_on_policy:
+            # create tensors in memory
+            if self.memory is not None:
+                self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+                self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+                self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
+                self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+                self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self.memory.create_tensor(name="noises", size=self.action_space, dtype=torch.float32)
+                self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated", "noises"]
+        else:
+            # create tensors in memory
+            if self.memory is not None:
+                self.memory.create_tensor(name="states", size=self.observation_space, dtype=torch.float32)
+                self.memory.create_tensor(name="next_states", size=self.observation_space, dtype=torch.float32)
+                self.memory.create_tensor(name="actions", size=self.action_space, dtype=torch.float32)
+                self.memory.create_tensor(name="rewards", size=1, dtype=torch.float32)
+                self.memory.create_tensor(name="terminated", size=1, dtype=torch.bool)
+                self._tensors_names = ["states", "actions", "rewards", "next_states", "terminated"]
 
     def act(self, states: torch.Tensor, timestep: int, timesteps: int) -> torch.Tensor:
         """Process the environment's states to make a decision (actions) using the main policy
@@ -175,14 +192,15 @@ class EBFlow(Agent):
         """
         self.policy.eval()
         # sample random actions
-        # TODO, check for stochasticity
         if timestep < self._random_timesteps:
             return self.policy.random_act({"states": self._state_preprocessor(states)}, role="policy")
 
         # sample stochastic actions
-        actions, _, outputs = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        actions, log_prob, noises = self.policy.act({"states": self._state_preprocessor(states)}, role="policy")
+        
+        self.current_noises = noises
 
-        return actions, None, outputs
+        return actions, log_prob, actions
 
     def record_transition(self,
                           states: torch.Tensor,
@@ -224,10 +242,10 @@ class EBFlow(Agent):
 
             # storage transition in memory
             self.memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                    terminated=terminated, truncated=truncated)
+                                    terminated=terminated, truncated=truncated, noises=self.current_noises)
             for memory in self.secondary_memories:
                 memory.add_samples(states=states, actions=actions, rewards=rewards, next_states=next_states,
-                                   terminated=terminated, truncated=truncated)
+                                   terminated=terminated, truncated=truncated, noises=self.current_noises)
 
     def pre_interaction(self, timestep: int, timesteps: int) -> None:
         """Callback called before the interaction with the environment
@@ -247,15 +265,22 @@ class EBFlow(Agent):
         :param timesteps: Number of timesteps
         :type timesteps: int
         """
-        if timestep >= self._learning_starts:
-            self.set_mode("train")
-            self._update(timestep, timesteps)
-            self.set_mode("eval")
+        if self._is_on_policy:
+            self._rollout += 1
+            if not self._rollout % self._rollouts and timestep >= self._learning_starts:
+                self.set_mode("train")
+                self._on_policy_update(timestep, timesteps)
+                self.set_mode("eval")
+        else:
+            if timestep >= self._learning_starts:
+                self.set_mode("train")
+                self._off_policy_update(timestep, timesteps)
+                self.set_mode("eval")
 
         # write tracking data and checkpoints
         super().post_interaction(timestep, timesteps)
 
-    def _update(self, timestep: int, timesteps: int) -> None:
+    def _off_policy_update(self, timestep: int, timesteps: int) -> None:
         """Algorithm's main update step
 
         :param timestep: Current timestep
@@ -311,3 +336,56 @@ class EBFlow(Agent):
 
                 if self._learning_rate_scheduler:
                     self.track_data("Learning / Policy learning rate", self.policy_scheduler.get_last_lr()[0])
+    
+    def _on_policy_update(self, timestep: int, timesteps: int) -> None:
+        # sample mini-batches from memory
+        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches)
+        cumulative_loss = 0
+
+        # learning epochs
+        for epoch in range(self._learning_epochs):
+            # mini-batches loop
+            for sampled_states, sampled_actions, sampled_rewards, sampled_next_states, sampled_dones, noises in sampled_batches:
+
+                sampled_states = self._state_preprocessor(sampled_states, train=True)
+                sampled_next_states = self._state_preprocessor(sampled_next_states, train=True)
+
+                # compute target values
+                with torch.no_grad():
+                    self.target_policy.eval()
+                    v_old = self.target_policy.get_v_forard(torch.cat((sampled_next_states, sampled_next_states), dim=0))
+                    target_q_values = torch.min(v_old[:v_old.shape[0]//2], v_old[v_old.shape[0]//2:])
+                    target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
+
+                self.policy.train()
+                # compute critic loss
+                current_q, _ = self.policy.get_q_forard(torch.cat((sampled_states, sampled_states), dim=0), torch.cat((noises, noises), dim=0))
+                target_values = torch.cat((target_values, target_values), dim=0)
+
+                loss = F.mse_loss(current_q, target_values) / 2
+
+                # optimization step (critic)
+                self.policy_optimizer.zero_grad()
+                loss.backward()
+                if self._grad_norm_clip > 0:
+                    torch.nn.utils.clip_grad_norm_(self.policy.parameters(), self._grad_norm_clip)
+                self.policy_optimizer.step()
+
+                # update target networks
+                self.target_policy.update_parameters(self.policy, polyak=self._polyak)
+
+                # update learning rate
+                if self._learning_rate_scheduler:
+                    self.policy_scheduler.step()
+
+
+        # record data
+        self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
+        self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
+        if self._entropy_loss_scale:
+            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches))
+
+        self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
+
+        if self._learning_rate_scheduler:
+            self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

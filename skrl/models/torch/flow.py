@@ -56,14 +56,15 @@ class FlowMixin:
         """
         obs_ = inputs['states']
         obs = torch.as_tensor(obs_, dtype=torch.float32, device=self.device)
-        # eps = torch.randn((obs_.shape[0],) + self.prior.shape, dtype=obs.dtype, device=obs.device)
-        # act, _ = self.prior.get_mean_std(eps, context=obs)
-        # log_prob = self.prior.log_prob(act, context=obs)
-        act, log_prob = self.prior.sample(num_samples=obs_.shape[0], context=obs)
-        actions, log_det = self.forward(obs=obs, act=act)
+        # if role == "deterministic":
+        #     eps = torch.randn((obs_.shape[0],) + self.prior.shape, dtype=obs.dtype, device=obs.device)
+        #     act, _ = self.prior.get_mean_std(eps, context=obs)
+        #     log_prob = self.prior.log_prob(act, context=obs)
+        # else:
+        noises, log_prob = self.prior.sample(num_samples=obs_.shape[0], context=obs)
+        actions, log_det = self.forward(obs=obs, act=noises)
         log_prob -= log_det
-        # print(act)
-        return actions, log_prob, actions
+        return actions, log_prob, noises
 
     def forward(self, obs, act):
         log_q = torch.zeros(act.shape[0], dtype=act.dtype, device=act.device)
@@ -110,5 +111,23 @@ class FlowMixin:
             v += v_
         _, v_ = self.prior.get_qv(z, context=obs)
         v += v_
+        v = v * self.alpha
+        return v[:, None]
+    
+    def get_q_forward(self, obs, act):
+        # should be wrong...
+        q, v = self.prior.get_qv(act, context=obs)
+        z = act
+        for flow in self.flows:
+            z, log_det = flow.forward(z, context=obs)
+            q -= log_det
+        q = q * self.alpha
+        v = v * self.alpha
+        return q[:, None], v[:, None]
+
+    def get_v_forward(self, obs):
+        # should be wrong...
+        act = torch.zeros((obs.shape[0], self.num_actions), device=self.device)
+        _, v = self.prior.get_qv(act, context=obs)
         v = v * self.alpha
         return v[:, None]
