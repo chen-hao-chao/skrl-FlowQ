@@ -85,19 +85,21 @@ memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=device)
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
 cfg = EBFlow_DEFAULT_CONFIG.copy()
-cfg["gradient_steps"] = 1
+cfg["rollouts"] = 16  # memory_size
+cfg["_gradient_steps"] = 4
+cfg["is_on_policy"] = True
 cfg["batch_size"] = 4096
 cfg["discount_factor"] = 0.99
 cfg["polyak"] = 0.005
 cfg["learning_rate"] = 5e-4
-cfg["random_timesteps"] = 80
-cfg["learning_starts"] = 80
+cfg["random_timesteps"] = 0
+cfg["learning_starts"] = 0
 cfg["grad_norm_clip"] = 10
 cfg["state_preprocessor"] = RunningStandardScaler
 cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 800
-cfg["experiment"]["checkpoint_interval"] = 8000
+cfg["experiment"]["write_interval"] = 40
+cfg["experiment"]["checkpoint_interval"] = 400
 cfg["experiment"]["directory"] = "runs/torch/Ant"
 
 # instantiate the agent's models (function approximators).

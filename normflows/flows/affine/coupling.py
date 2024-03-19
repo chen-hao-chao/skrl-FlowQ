@@ -325,6 +325,12 @@ class MaskedCondAffineFlow(Flow):
         q = log_det
         v = torch.zeros(z.shape[0], device=z.device)
         return z_, q, v
+    
+    def get_qv_fwd(self, z, context):
+        z_, log_det = self.forward(z, context)
+        q = log_det
+        v = torch.zeros(z.shape[0], device=z.device)
+        return z_, q, v
 
 
 class CondScaling(Flow):
@@ -360,6 +366,9 @@ class CondScaling(Flow):
 
         return z, q, v
     
+    def get_qv_fwd(self, z, context):
+        z, q, v = self.get_qv(z, context)
+        return z, q, v
 
 # class CondAffineLinear(Flow):
 #     """

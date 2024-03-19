@@ -27,6 +27,10 @@ class FlowMixin:
         print("Pass Test 1: (q - v) = alpha * log p")
         assert torch.allclose(v, v_)
         print("Pass Test 2: v is a constant w.r.t. a")
+        _, log_prob, noises = self.act({"states": state})
+        q, v = self.get_qv_fwd(obs=state, act=noises)
+        assert torch.allclose(log_prob * self.alpha, ((q-v)).squeeze())
+        print("Pass Test 3: fwd get q, v is working.")
         
     def act(self,
             inputs: Mapping[str, Union[torch.Tensor, Any]],
@@ -114,20 +118,25 @@ class FlowMixin:
         v = v * self.alpha
         return v[:, None]
     
-    def get_q_forward(self, obs, act):
-        # should be wrong...
-        q, v = self.prior.get_qv(act, context=obs)
+    def get_qv_fwd(self, obs, act):
+        q = self.prior.log_prob(act, context=obs)
+        v = torch.zeros((obs.shape[0]), device=act.device)
         z = act
         for flow in self.flows:
-            z, log_det = flow.forward(z, context=obs)
-            q -= log_det
+            z, q_, v_ = flow.get_qv_fwd(z, context=obs)
+            q -= q_
+            v -= v_
         q = q * self.alpha
         v = v * self.alpha
         return q[:, None], v[:, None]
 
-    def get_v_forward(self, obs):
+    def get_v_fwd(self, obs):
         # should be wrong...
         act = torch.zeros((obs.shape[0], self.num_actions), device=self.device)
-        _, v = self.prior.get_qv(act, context=obs)
+        v = torch.zeros((obs.shape[0]), device=act.device)
+        z = act
+        for flow in self.flows:
+            z, _, v_ = flow.get_qv_fwd(z, context=obs)
+            v -= v_
         v = v * self.alpha
         return v[:, None]

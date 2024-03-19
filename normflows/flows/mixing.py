@@ -569,97 +569,103 @@ class LULinearPermute(Flow):
         v = -log_det
         return z_, q, v
 
+    def get_qv_fwd(self, z, context=None):
+        z_, log_det = self.forward(z, context)
+        q = torch.zeros(len(z), device=z.device)
+        v = -log_det
+        return z_, q, v
+
 # (Roy implemented - 20240120)
-from normflows.nets import MLP
-class Cond_LULinear(Flow):
-    def __init__(self, features, context_size, hidden_units, hidden_layers, identity_init=True, eps=1e-3):
-        super().__init__()
-        self.eps = eps
-        self.features = features
+# from normflows.nets import MLP
+# class Cond_LULinear(Flow):
+#     def __init__(self, features, context_size, hidden_units, hidden_layers, identity_init=True, eps=1e-3):
+#         super().__init__()
+#         self.eps = eps
+#         self.features = features
 
-        self.lower_indices = np.tril_indices(features, k=-1)
-        self.upper_indices = np.triu_indices(features, k=1)
-        self.diag_indices = np.diag_indices(features)
+#         self.lower_indices = np.tril_indices(features, k=-1)
+#         self.upper_indices = np.triu_indices(features, k=1)
+#         self.diag_indices = np.diag_indices(features)
 
-        n_triangular_entries = ((features - 1) * features) // 2
+#         n_triangular_entries = ((features - 1) * features) // 2
 
-        if identity_init:
-            self.lower_upper = MLP([context_size] + [hidden_units]*hidden_layers + [n_triangular_entries*2], init_zeros=True)
-            self.diag = MLP([context_size] + [hidden_units]*hidden_layers + [features], init_const=np.log(np.exp(1 - self.eps) - 1))
-        else:
-            self.lower_upper = MLP([context_size] + [hidden_units]*hidden_layers + [n_triangular_entries*2])
-            self.diag = MLP([context_size] + [hidden_units]*hidden_layers + [features])
+#         if identity_init:
+#             self.lower_upper = MLP([context_size] + [hidden_units]*hidden_layers + [n_triangular_entries*2], init_zeros=True)
+#             self.diag = MLP([context_size] + [hidden_units]*hidden_layers + [features], init_const=np.log(np.exp(1 - self.eps) - 1))
+#         else:
+#             self.lower_upper = MLP([context_size] + [hidden_units]*hidden_layers + [n_triangular_entries*2])
+#             self.diag = MLP([context_size] + [hidden_units]*hidden_layers + [features])
 
-    def _create_lower_upper(self, context):
-        lower_upper = self.lower_upper(context)
-        diag = self.diag(context)
+#     def _create_lower_upper(self, context):
+#         lower_upper = self.lower_upper(context)
+#         diag = self.diag(context)
         
-        lower = torch.zeros([context.shape[0], self.features, self.features], device=context.device)
-        lower[:, self.lower_indices[0], self.lower_indices[1]] = lower_upper[:, 0::2]
-        lower[:, self.diag_indices[0], self.diag_indices[1]] = 1.0
+#         lower = torch.zeros([context.shape[0], self.features, self.features], device=context.device)
+#         lower[:, self.lower_indices[0], self.lower_indices[1]] = lower_upper[:, 0::2]
+#         lower[:, self.diag_indices[0], self.diag_indices[1]] = 1.0
 
-        upper = torch.zeros([context.shape[0], self.features, self.features], device=context.device)
-        upper[:, self.upper_indices[0], self.upper_indices[1]] = lower_upper[:, 1::2]
-        upper[:, self.diag_indices[0], self.diag_indices[1]] = F.softplus(diag) + self.eps
-        return lower, upper
+#         upper = torch.zeros([context.shape[0], self.features, self.features], device=context.device)
+#         upper[:, self.upper_indices[0], self.upper_indices[1]] = lower_upper[:, 1::2]
+#         upper[:, self.diag_indices[0], self.diag_indices[1]] = F.softplus(diag) + self.eps
+#         return lower, upper
 
-    def forward(self, inputs, context):
-        lower, upper = self._create_lower_upper(context)
-        outputs = inputs[..., None]
-        outputs = torch.matmul(upper, outputs)
-        outputs = torch.matmul(lower, outputs)
-        outputs = outputs[..., 0]
-        logabsdet = self.logabsdet(upper)
-        return outputs, logabsdet
+#     def forward(self, inputs, context):
+#         lower, upper = self._create_lower_upper(context)
+#         outputs = inputs[..., None]
+#         outputs = torch.matmul(upper, outputs)
+#         outputs = torch.matmul(lower, outputs)
+#         outputs = outputs[..., 0]
+#         logabsdet = self.logabsdet(upper)
+#         return outputs, logabsdet
 
-    def inverse(self, inputs, context):
-        lower, upper = self._create_lower_upper(context)
-        outputs = inputs[..., None]
-        outputs = torch.linalg.solve_triangular(
-            lower, outputs, upper=False, unitriangular=True
-        )
-        outputs = torch.linalg.solve_triangular(
-            upper, outputs, upper=True, unitriangular=False
-        )
-        outputs = outputs[..., 0]
-        logabsdet = -self.logabsdet(upper)
-        return outputs, logabsdet
+#     def inverse(self, inputs, context):
+#         lower, upper = self._create_lower_upper(context)
+#         outputs = inputs[..., None]
+#         outputs = torch.linalg.solve_triangular(
+#             lower, outputs, upper=False, unitriangular=True
+#         )
+#         outputs = torch.linalg.solve_triangular(
+#             upper, outputs, upper=True, unitriangular=False
+#         )
+#         outputs = outputs[..., 0]
+#         logabsdet = -self.logabsdet(upper)
+#         return outputs, logabsdet
 
-    def logabsdet(self, upper):
-        upper_diag = upper[:, self.diag_indices[0], self.diag_indices[1]]
-        return torch.sum(torch.log(upper_diag), dim=list(range(1, upper_diag.dim())))
+#     def logabsdet(self, upper):
+#         upper_diag = upper[:, self.diag_indices[0], self.diag_indices[1]]
+#         return torch.sum(torch.log(upper_diag), dim=list(range(1, upper_diag.dim())))
 
 
 # (Roy implemented - 20240120)
-class CondLULinearPermute(Flow):
-    """
-    Fixed permutation combined with a linear transformation parametrized
-    using the LU decomposition, used in https://arxiv.org/abs/1906.04032
-    """
+# class CondLULinearPermute(Flow):
+#     """
+#     Fixed permutation combined with a linear transformation parametrized
+#     using the LU decomposition, used in https://arxiv.org/abs/1906.04032
+#     """
 
-    def __init__(self, num_channels, context_size, hidden_units, hidden_layers, identity_init=True):
-        """Constructor
+#     def __init__(self, num_channels, context_size, hidden_units, hidden_layers, identity_init=True):
+#         """Constructor
 
-        Args:
-          num_channels: Number of dimensions of the data
-          identity_init: Flag, whether to initialize linear transform as identity matrix
-        """
-        # Initialize
-        super().__init__()
+#         Args:
+#           num_channels: Number of dimensions of the data
+#           identity_init: Flag, whether to initialize linear transform as identity matrix
+#         """
+#         # Initialize
+#         super().__init__()
 
-        # Define modules
-        self.permutation = _RandomPermutation(num_channels)
-        self.linear = Cond_LULinear(features=num_channels, context_size=context_size, hidden_units=hidden_units, hidden_layers=hidden_layers, identity_init=identity_init)
+#         # Define modules
+#         self.permutation = _RandomPermutation(num_channels)
+#         self.linear = Cond_LULinear(features=num_channels, context_size=context_size, hidden_units=hidden_units, hidden_layers=hidden_layers, identity_init=identity_init)
 
-    def forward(self, z, context=None):
-        z, log_det = self.linear.inverse(z, context=context)
-        z, _ = self.permutation.inverse(z, context=context)
-        return z, log_det.view(-1) # flatten
+#     def forward(self, z, context=None):
+#         z, log_det = self.linear.inverse(z, context=context)
+#         z, _ = self.permutation.inverse(z, context=context)
+#         return z, log_det.view(-1) # flatten
 
-    def inverse(self, z, context=None):
-        z, _ = self.permutation(z, context=context)
-        z, log_det = self.linear(z, context=context)
-        return z, log_det.view(-1) # flatten
+#     def inverse(self, z, context=None):
+#         z, _ = self.permutation(z, context=context)
+#         z, log_det = self.linear(z, context=context)
+#         return z, log_det.view(-1) # flatten
     
 
 # from modules.hypernetwork import HyperNetwork

@@ -339,7 +339,7 @@ class EBFlow(Agent):
     
     def _on_policy_update(self, timestep: int, timesteps: int) -> None:
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names)
         cumulative_loss = 0
 
         # learning epochs
@@ -353,13 +353,13 @@ class EBFlow(Agent):
                 # compute target values
                 with torch.no_grad():
                     self.target_policy.eval()
-                    v_old = self.target_policy.get_v_forard(torch.cat((sampled_next_states, sampled_next_states), dim=0))
+                    v_old = self.target_policy.get_v_fwd(torch.cat((sampled_next_states, sampled_next_states), dim=0))
                     target_q_values = torch.min(v_old[:v_old.shape[0]//2], v_old[v_old.shape[0]//2:])
                     target_values = sampled_rewards + self._discount_factor * sampled_dones.logical_not() * target_q_values
 
                 self.policy.train()
                 # compute critic loss
-                current_q, _ = self.policy.get_q_forard(torch.cat((sampled_states, sampled_states), dim=0), torch.cat((noises, noises), dim=0))
+                current_q, _ = self.policy.get_qv_fwd(torch.cat((sampled_states, sampled_states), dim=0), torch.cat((noises, noises), dim=0))
                 target_values = torch.cat((target_values, target_values), dim=0)
 
                 loss = F.mse_loss(current_q, target_values) / 2
@@ -380,12 +380,6 @@ class EBFlow(Agent):
 
 
         # record data
-        self.track_data("Loss / Policy loss", cumulative_policy_loss / (self._learning_epochs * self._mini_batches))
-        self.track_data("Loss / Value loss", cumulative_value_loss / (self._learning_epochs * self._mini_batches))
-        if self._entropy_loss_scale:
-            self.track_data("Loss / Entropy loss", cumulative_entropy_loss / (self._learning_epochs * self._mini_batches))
-
-        self.track_data("Policy / Standard deviation", self.policy.distribution(role="policy").stddev.mean().item())
-
+        self.track_data("Loss / Policy loss", cumulative_loss / (self._learning_epochs * self._mini_batches))
         if self._learning_rate_scheduler:
             self.track_data("Learning / Learning rate", self.scheduler.get_last_lr()[0])

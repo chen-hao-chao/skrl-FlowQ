@@ -140,3 +140,8 @@ class Preprocessing(flows.Flow):
         z_, q = self.inverse(z, context)
         v = torch.zeros(z.shape[0], device=z.device)
         return z_, q, v
+
+    def get_qv_fwd(self, z, context):
+        z_, q = self.forward(z, context)
+        v = torch.zeros(z.shape[0], device=z.device)
+        return z_, q, v
