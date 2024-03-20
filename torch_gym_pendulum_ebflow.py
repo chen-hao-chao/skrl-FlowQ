@@ -30,7 +30,7 @@ class Policy(FlowMixin, Model):
         self.flows = nn.ModuleList(flows).to(self.device)
         self.prior = q0.to(self.device)
         self.alpha = alpha
-        self.unit_test(num_samples=10, scale=0.5)
+        self.unit_test(num_samples=10, scale=1/0.5)
 
     def init_Coupling(self, state_sizes, action_sizes):
         init_zeros = True

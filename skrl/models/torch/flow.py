@@ -17,7 +17,7 @@ class FlowMixin:
     def unit_test(self, num_samples=10, scale=1):
         self.eval()
         state = torch.randn((num_samples, self.num_observations), device=self.device)
-        action = torch.clamp(torch.randn((num_samples, self.num_actions), device=self.device), min=-scale, max=scale)
+        action = torch.clamp(torch.randn((num_samples, self.num_actions), device=self.device), min=-scale+1e-5, max=scale-1e-5)
         state = torch.cat((state, state), dim=0)
         action = torch.cat((action, action), dim=0)
         log_prob = self.log_prob(obs=state, act=action)
@@ -29,8 +29,11 @@ class FlowMixin:
         print("Pass Test 2: v is a constant w.r.t. a")
         _, log_prob, noises = self.act({"states": state})
         q, v = self.get_qv_fwd(obs=state, act=noises)
+        v_ = self.get_v_fwd(obs=state)
         assert torch.allclose(log_prob * self.alpha, ((q-v)).squeeze())
         print("Pass Test 3: fwd get q, v is working.")
+        assert torch.allclose(v, v_)
+        print("Pass Test 4: the v from get_v_fwd is the same as that from get_qv_fwd.")
         
     def act(self,
             inputs: Mapping[str, Union[torch.Tensor, Any]],
@@ -67,7 +70,7 @@ class FlowMixin:
         # else:
         noises, log_prob = self.prior.sample(num_samples=obs_.shape[0], context=obs)
         actions, log_det = self.forward(obs=obs, act=noises)
-        log_prob -= log_det
+        log_prob = log_prob + log_det # this det contains negative sign
         return actions, log_prob, noises
 
     def forward(self, obs, act):
@@ -124,19 +127,18 @@ class FlowMixin:
         z = act
         for flow in self.flows:
             z, q_, v_ = flow.get_qv_fwd(z, context=obs)
-            q -= q_
-            v -= v_
+            q = q - q_
+            v = v - v_
         q = q * self.alpha
         v = v * self.alpha
         return q[:, None], v[:, None]
 
     def get_v_fwd(self, obs):
-        # should be wrong...
         act = torch.zeros((obs.shape[0], self.num_actions), device=self.device)
         v = torch.zeros((obs.shape[0]), device=act.device)
         z = act
         for flow in self.flows:
             z, _, v_ = flow.get_qv_fwd(z, context=obs)
-            v -= v_
+            v = v - v_
         v = v * self.alpha
         return v[:, None]
