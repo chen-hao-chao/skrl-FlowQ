@@ -11,10 +11,6 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
-
-# seed for reproducibility
-set_seed()  # e.g. `set_seed(42)` for fixed seed
-
 from normflows.nets import MLP
 from normflows.transforms import Preprocessing
 from normflows.distributions import MyConditionalDiagGaussian
@@ -72,53 +68,63 @@ class Policy(FlowMixin, Model):
         flows += [Preprocessing(option='atanh', clip=True)]
         return flows, q0
 
-# load and wrap the Omniverse Isaac Gym environment
-env = load_omniverse_isaacgym_env(task_name="Ant", headless=True, num_envs=64)
-env = wrap_env(env)
+def _train(cfg):
+    # seed for reproducibility
+    set_seed()  # e.g. `set_seed(42)` for fixed seed
 
-device = env.device
+    cfg["gradient_steps"] = 1
+    cfg["discount_factor"] = 0.99    
+    cfg["random_timesteps"] = 100
+    cfg["learning_starts"] = 100
+    cfg["state_preprocessor"] = RunningStandardScaler
+    # logging to TensorBoard and write checkpoints (in timesteps)
+    cfg["experiment"]["write_interval"] = 1000
+    cfg["experiment"]["checkpoint_interval"] = 10000
 
+    # load and wrap the Omniverse Isaac Gym environment
+    env = load_omniverse_isaacgym_env(task_name="Ant", headless=True, num_envs=cfg['num_envs'])
+    env = wrap_env(env)
+    device = env.device
+    cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 
-# instantiate a memory as rollout buffer (any memory can be used for this)
-memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=device)
+    # instantiate a memory as rollout buffer (any memory can be used for this)
+    memory = RandomMemory(memory_size=15625, num_envs=env.num_envs, device=device)
 
-# configure and instantiate the agent (visit its documentation to see all the options)
-# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
-cfg = EBFlow_DEFAULT_CONFIG.copy()
-cfg["gradient_steps"] = 1
-cfg["batch_size"] = 4096
-cfg["discount_factor"] = 0.99
-cfg["polyak"] = 0.005
-cfg["learning_rate"] = 5e-4
-cfg["random_timesteps"] = 80
-cfg["learning_starts"] = 80
-cfg["grad_norm_clip"] = 10
-cfg["state_preprocessor"] = RunningStandardScaler
-cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
-# logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 800
-cfg["experiment"]["checkpoint_interval"] = 8000
-cfg["experiment"]["directory"] = "runs/torch/Ant"
+    # instantiate the agent's models (function approximators).
+    # SAC requires 5 models, visit its documentation for more details
+    # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
+    models = {}
+    models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
+    models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
 
-# instantiate the agent's models (function approximators).
-# SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
-models = {}
-models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
-models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
+    agent = EBFlow(models=models,
+                memory=memory,
+                cfg=cfg,
+                observation_space=env.observation_space,
+                action_space=env.action_space,
+                device=device)
 
+    # configure and instantiate the RL trainer
+    cfg_trainer = {"timesteps": cfg["timesteps"], "headless": True}
+    trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
-agent = EBFlow(models=models,
-            memory=memory,
-            cfg=cfg,
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            device=device)
+    # start training
+    trainer.train()
 
+def main():
+    # configure and instantiate the agent (visit its documentation to see all the options)
+    # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
+    cfg = EBFlow_DEFAULT_CONFIG.copy()
+    cfg["gradient_steps"] = 1
+    cfg["batch_size"] = 4096
+    cfg["discount_factor"] = 0.99
+    cfg["polyak"] = 0.005
+    cfg["learning_rate"] = 5e-4
+    cfg["grad_norm_clip"] = 10
+    cfg["num_envs"] = 64
+    cfg["timesteps"] = 160000
+    cfg["experiment"]["directory"] = "runs/torch/Ant"
+    _train(cfg)
 
-# configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 160000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
-
-# start training
-trainer.train()
+if __name__ == '__main__':
+    main()

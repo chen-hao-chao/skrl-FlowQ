@@ -57,3 +57,13 @@ To cite this library in publications, please use the following reference:
 // Off-policy EBFlow on Issac-Ant
 PYTHON_PATH torch_ant_ebflow_off.py
 ```
+
+### Ray Tune Commands
+- Install ray tune:
+```
+PYTHON_PATH -m pip install ray[tune]
+```
+- Run the following commands:
+```
+PYTHON_PATH tune_ant_ebflow_1.py
+```
