@@ -86,19 +86,21 @@ env = wrap_env(env)
 device = env.device
 
 # instantiate a memory as experience replay
-memory = RandomMemory(memory_size=20000, num_envs=env.num_envs, device=device, replacement=False)
+memory = RandomMemory(memory_size=1024, num_envs=env.num_envs, device=device, replacement=False)
 
 # configure and instantiate the agent (visit its documentation to see all the options)
 # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
 cfg = EBFlow_DEFAULT_CONFIG.copy()
+cfg["rollouts"] = 1024  # memory_size
+cfg["learning_epochs"] = 10
+cfg["mini_batches"] = 32
+cfg["is_on_policy"] = True
 cfg["discount_factor"] = 0.98
-cfg["batch_size"] = 100
 cfg["random_timesteps"] = 0
-cfg["learning_starts"] = 1 #1000
-cfg["learn_entropy"] = True
+cfg["learning_starts"] = 0
 # logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 75
-cfg["experiment"]["checkpoint_interval"] = 750
+cfg["experiment"]["write_interval"] = 500
+cfg["experiment"]["checkpoint_interval"] = 5000
 cfg["experiment"]["directory"] = "runs/torch/Pendulum"
 
 # instantiate the agent's models (function approximators).
@@ -117,7 +119,7 @@ agent = EBFlow(models=models,
 
 
 # configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 15000, "headless": True}
+cfg_trainer = {"timesteps": 100000, "headless": True}
 trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
 
 # start training

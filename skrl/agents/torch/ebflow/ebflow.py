@@ -39,7 +39,11 @@ EBFlow_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    # variables for the on-policy variant
     "is_on_policy": False,   # Set true for on-policy updates
+    "rollouts": 16,
+    "learning_epochs": 10, 
+    "mini_batches": 2,
 
     "experiment": {
         "base_directory": "",       # base directory for the experiment
@@ -132,6 +136,14 @@ class EBFlow(Agent):
         self._entropy_coefficient = self.cfg["entropy_value"]
 
         self._rewards_shaper = self.cfg["rewards_shaper"]
+
+
+        # Variables for on-policy variants
+        self._rollouts = self.cfg["rollouts"]
+        self._rollout = 0
+
+        self._learning_epochs = self.cfg["learning_epochs"]
+        self._mini_batches = self.cfg["mini_batches"]
 
         # set up optimizers and learning rate schedulers
         if self.policy is not None:
@@ -339,7 +351,7 @@ class EBFlow(Agent):
     
     def _on_policy_update(self, timestep: int, timesteps: int) -> None:
         # sample mini-batches from memory
-        sampled_batches = self.memory.sample_all(names=self._tensors_names)
+        sampled_batches = self.memory.sample_all(names=self._tensors_names, mini_batches=self._mini_batches)
         cumulative_loss = 0
 
         # learning epochs
@@ -373,10 +385,10 @@ class EBFlow(Agent):
 
                 # update target networks
                 self.target_policy.update_parameters(self.policy, polyak=self._polyak)
-
-                # update learning rate
-                if self._learning_rate_scheduler:
-                    self.policy_scheduler.step()
+            
+            # update learning rate
+            if self._learning_rate_scheduler:
+                self.scheduler.step()
 
 
         # record data
