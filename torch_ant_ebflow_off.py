@@ -1,3 +1,4 @@
+import os
 import torch
 import torch.nn as nn
 
@@ -82,6 +83,8 @@ def _train(cfg):
     cfg["experiment"]["checkpoint_interval"] = 10000
 
     # load and wrap the Omniverse Isaac Gym environment
+    # Ref: https://github.com/ray-project/ray/issues/3265#issuecomment-510215566
+    del os.environ['CUDA_VISIBLE_DEVICES']
     env = load_omniverse_isaacgym_env(task_name="Ant", headless=True, num_envs=cfg['num_envs'])
     env = wrap_env(env)
     device = env.device
