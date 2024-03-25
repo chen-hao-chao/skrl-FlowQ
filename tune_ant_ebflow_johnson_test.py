@@ -46,7 +46,9 @@ def trainer(tuner):
 
 def main():
     # Ref for `local_mode`: https://github.com/ray-project/ray/issues/21037
-    ray.init(num_gpus=1, local_mode=True) # 8
+    # ray.init(num_gpus=1, local_mode=True) # 8
+    ray.init(num_gpus=1) # 8
+    print("GPUs", ray.get_gpu_ids())
     
     search_space = {
         "grad_clip": tune.grid_search([30]),

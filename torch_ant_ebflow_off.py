@@ -84,8 +84,13 @@ def _train(cfg):
 
     # load and wrap the Omniverse Isaac Gym environment
     # Ref: https://github.com/ray-project/ray/issues/3265#issuecomment-510215566
-    del os.environ['CUDA_VISIBLE_DEVICES']
-    env = load_omniverse_isaacgym_env(task_name="Ant", headless=True, num_envs=cfg['num_envs'])
+    # del os.environ['CUDA_VISIBLE_DEVICES']
+    env = load_omniverse_isaacgym_env(
+        task_name="Ant",
+        headless=True,
+        num_envs=cfg['num_envs'],
+        parse_args=False,
+    )
     env = wrap_env(env)
     device = env.device
     cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
