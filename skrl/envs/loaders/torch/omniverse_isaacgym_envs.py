@@ -176,6 +176,9 @@ def load_omniverse_isaacgym_env(task_name: str = "",
 
     # internal classes
     class _OmniIsaacGymVecEnv(VecEnvBase):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs, enable_signal=False)
+
         def step(self, actions):
             actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device).clone()
             self._task.pre_physics_step(actions)

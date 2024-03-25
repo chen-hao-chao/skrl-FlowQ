@@ -31,6 +31,7 @@ class VecEnvBase(gym.Env):
         enable_viewport: bool = False,
         launch_simulation_app: bool = True,
         experience: str = None,
+        enable_signal: bool = True,
     ) -> None:
         """Initializes RL and task parameters.
 
@@ -69,8 +70,9 @@ class VecEnvBase(gym.Env):
                 enable_extension("omni.kit.livestream.native")
                 enable_extension("omni.services.streaming.manager")
 
-            # handle ctrl+c event
-            signal.signal(signal.SIGINT, self.signal_handler)
+            if enable_signal:
+                # handle ctrl+c event
+                signal.signal(signal.SIGINT, self.signal_handler)
 
         self._render = not headless or enable_livestream or enable_viewport
         self._record = False
