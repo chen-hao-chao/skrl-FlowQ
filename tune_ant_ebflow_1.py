@@ -15,7 +15,7 @@ def trainer(tuner):
     num_envs = tuner['num_envs']
     timesteps = tuner['timesteps']
 
-    #
+    # 
     description = "../../../../../results/"+ \
                     "(id="+ str(id)+")" + \
                     "(lr="+ str(lr)+")" + \
@@ -45,7 +45,7 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=1) # 8
+    ray.init(num_gpus=3) # 8
     
     search_space = {
         "grad_clip": tune.grid_search([30]),
@@ -65,8 +65,8 @@ def main():
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        local_dir=os.path.join(dirpath, "runs/result_tuning_EBRL_isaac_ant"),
-        resources_per_trial={'cpu': 1, 'gpu': 1}, # 0.2
+        local_dir="/workspace/skrl-FlowQ/runs/result_tuning_EBRL_isaac_ant", #os.path.join(dirpath, "runs/result_tuning_EBRL_isaac_ant"),
+        resources_per_trial={'cpu': 1, 'gpu': 0.2}, # 0.2
         config=search_space,
     )
 

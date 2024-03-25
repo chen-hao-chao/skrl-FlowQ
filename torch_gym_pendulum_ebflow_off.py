@@ -74,50 +74,57 @@ class Policy(FlowMixin, Model):
         return flows, q0
 
 
-# load and wrap the gym environment.
-# note: the environment version may change depending on the gym version
-try:
-    env = gym.make("Pendulum-v1")
-except gym.error.DeprecatedEnv as e:
-    env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("Pendulum-v")][0]
-    print("Pendulum-v1 not found. Trying {}".format(env_id))
-    env = gym.make(env_id)
-env = wrap_env(env)
-device = env.device
+def _train(cfg):
+    # load and wrap the gym environment.
+    # note: the environment version may change depending on the gym version
+    try:
+        env = gym.make("Pendulum-v1")
+    except gym.error.DeprecatedEnv as e:
+        env_id = [spec.id for spec in gym.envs.registry.all() if spec.id.startswith("Pendulum-v")][0]
+        print("Pendulum-v1 not found. Trying {}".format(env_id))
+        env = gym.make(env_id)
+    env = wrap_env(env)
+    device = env.device
 
-# instantiate a memory as experience replay
-memory = RandomMemory(memory_size=20000, num_envs=env.num_envs, device=device, replacement=False)
+    # instantiate a memory as experience replay
+    memory = RandomMemory(memory_size=20000, num_envs=env.num_envs, device=device, replacement=False)
 
-# configure and instantiate the agent (visit its documentation to see all the options)
-# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
-cfg = EBFlow_DEFAULT_CONFIG.copy()
-cfg["discount_factor"] = 0.98
-cfg["batch_size"] = 100
-cfg["random_timesteps"] = 0
-cfg["learning_starts"] = 0
-# logging to TensorBoard and write checkpoints (in timesteps)
-cfg["experiment"]["write_interval"] = 75
-cfg["experiment"]["checkpoint_interval"] = 750
-cfg["experiment"]["directory"] = "runs/torch/Pendulum"
+    # instantiate the agent's models (function approximators).
+    # SAC requires 5 models, visit its documentation for more details
+    # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
+    models = {}
+    models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
+    models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
 
-# instantiate the agent's models (function approximators).
-# SAC requires 5 models, visit its documentation for more details
-# https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
-models = {}
-models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
-models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
-
-agent = EBFlow(models=models,
-            memory=memory,
-            cfg=cfg,
-            observation_space=env.observation_space,
-            action_space=env.action_space,
-            device=device)
+    agent = EBFlow(models=models,
+                memory=memory,
+                cfg=cfg,
+                observation_space=env.observation_space,
+                action_space=env.action_space,
+                device=device)
 
 
-# configure and instantiate the RL trainer
-cfg_trainer = {"timesteps": 15000, "headless": True}
-trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
+    # configure and instantiate the RL trainer
+    cfg_trainer = {"timesteps": 15000, "headless": True}
+    trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=[agent])
 
-# start training
-trainer.train()
+    # start training
+    trainer.train()
+
+
+def main():
+    # configure and instantiate the agent (visit its documentation to see all the options)
+    # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
+    cfg = EBFlow_DEFAULT_CONFIG.copy()
+    cfg["discount_factor"] = 0.98
+    cfg["batch_size"] = 100
+    cfg["random_timesteps"] = 0
+    cfg["learning_starts"] = 0
+    # logging to TensorBoard and write checkpoints (in timesteps)
+    cfg["experiment"]["write_interval"] = 75
+    cfg["experiment"]["checkpoint_interval"] = 750
+    cfg["experiment"]["directory"] = "runs/torch/Pendulum"
+    _train(cfg)
+
+if __name__ == '__main__':
+    main()
