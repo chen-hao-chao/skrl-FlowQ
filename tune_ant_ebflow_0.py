@@ -45,16 +45,16 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=8) # 8
-    
+    ray.init(num_gpus=8)
+    # testing time is around 10 minutes.
     search_space = {
         "grad_clip": tune.grid_search([30]),
         "tau": tune.grid_search([0.01, 0.005]),
         "alpha": tune.grid_search([0.5, 0.2, 0.1, 0.05, 0.005]),
         "lr": tune.grid_search([5e-4, 1e-3]),
         "bs": tune.grid_search([2048, 4096]),
-        "num_envs": tune.grid_search([256]),
-        "timesteps": tune.grid_search([500000]),
+        "num_envs": tune.grid_search([64]),
+        "timesteps": tune.grid_search([1000]),
         "id": tune.grid_search([0]),
         "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results/"]),
     }
@@ -62,7 +62,7 @@ def main():
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        resources_per_trial={'cpu': 1, 'gpu': 0.2}, # 0.2
+        resources_per_trial={'cpu': 1, 'gpu': 0.2},
         config=search_space,
     )
 

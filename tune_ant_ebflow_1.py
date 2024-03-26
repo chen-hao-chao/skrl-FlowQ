@@ -20,8 +20,8 @@ def trainer(tuner):
     description = path + "(id="+ str(id)+")" + \
                     "(lr="+ str(lr)+")" + \
                     "(bs="+ str(bs)+")" + \
-                    "(num_envs="+ str(num_envs)+")" + \
-                    "(timesteps="+ str(timesteps)+")" + \
+                    "(envs="+ str(num_envs)+")" + \
+                    "(ts="+ str(timesteps)+")" + \
                     "(gc="+ str(grad_clip)+")" + \
                     "(tau="+ str(tau)+")" + \
                     "(alpha="+ str(alpha)+")"
