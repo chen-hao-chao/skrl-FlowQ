@@ -67,3 +67,4 @@ PYTHON_PATH -m pip install ray[tune]
 ```
 PYTHON_PATH tune_ant_ebflow_1.py
 ```
+**Important Note:** Make sure that `"path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results/"])` is correct in line 59.
