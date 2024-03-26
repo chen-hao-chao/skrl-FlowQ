@@ -45,7 +45,7 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=8)
+    ray.init(num_gpus=3)
     # testing time is around 10 minutes.
     search_space = {
         "grad_clip": tune.grid_search([30]),
