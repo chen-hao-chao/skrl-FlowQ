@@ -14,10 +14,10 @@ def trainer(tuner):
     bs = tuner['bs']
     num_envs = tuner['num_envs']
     timesteps = tuner['timesteps']
+    path = tuner['path']
 
     # 
-    description = "../../../../../results/"+ \
-                    "(id="+ str(id)+")" + \
+    description = path + "(id="+ str(id)+")" + \
                     "(lr="+ str(lr)+")" + \
                     "(bs="+ str(bs)+")" + \
                     "(num_envs="+ str(num_envs)+")" + \
@@ -33,10 +33,10 @@ def trainer(tuner):
     cfg["polyak"] = tau
     cfg["entropy_value"] = alpha
     cfg["grad_norm_clip"] = grad_clip
-    cfg["learning_rate"] = lr #5e-4
-    cfg["batch_size"] = bs #4096
-    cfg["num_envs"] = num_envs # 64
-    cfg["timesteps"] = timesteps #160000
+    cfg["learning_rate"] = lr
+    cfg["batch_size"] = bs
+    cfg["num_envs"] = num_envs
+    cfg["timesteps"] = timesteps
     cfg["experiment"]["directory"] = description
     # --------
     
@@ -45,27 +45,23 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=3) # 8
+    ray.init(num_gpus=8) # 8
     
     search_space = {
         "grad_clip": tune.grid_search([30]),
         "tau": tune.grid_search([0.01, 0.005]),
         "alpha": tune.grid_search([0.5, 0.2, 0.1, 0.05, 0.005]),
-
         "lr": tune.grid_search([5e-4, 1e-3]),
         "bs": tune.grid_search([2048, 4096]),
         "num_envs": tune.grid_search([64]),
         "timesteps": tune.grid_search([500000]),
-        
         "id": tune.grid_search([0]),
+        "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results/"]),
     }
     
-    dirpath = os.path.dirname(os.path.realpath(__file__))
-
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        local_dir="/workspace/skrl-FlowQ/runs/result_tuning_EBRL_isaac_ant", #os.path.join(dirpath, "runs/result_tuning_EBRL_isaac_ant"),
         resources_per_trial={'cpu': 1, 'gpu': 0.2}, # 0.2
         config=search_space,
     )
