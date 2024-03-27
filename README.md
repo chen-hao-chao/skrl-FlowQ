@@ -71,4 +71,13 @@ PYTHON_PATH tune_ant_ebflow_1.py
 ```
 PYTHON_PATH tune_ant_ebflow_0.py
 ```
+- OR the following command for TPE-1 training:
+```
+PYTHON_PATH tune_tpe_1.py
+PYTHON_PATH tune_tpe_2.py
+PYTHON_PATH tune_tpe_3.py
+PYTHON_PATH tune_tpe_4.py
+PYTHON_PATH tune_tpe_5.py
+PYTHON_PATH tune_tpe_6.py
+```
 **Important Note:** Make sure that `"path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results/"])` is correct in line 59.

@@ -2,8 +2,6 @@ import torch
 from torch import nn
 from .. import utils
 
-
-# (Roy modified (init_const & Swish) - 20240120)
 class MLP(nn.Module):
     """
     A multilayer perceptron with Leaky ReLU nonlinearities
@@ -12,10 +10,8 @@ class MLP(nn.Module):
     def __init__(
         self,
         layers,
-        activation="swish",
-        leaky=0.0,
         dropout_rate=None,
-        init_zeros=False,
+        init=False,
         layernorm=False
     ):
         """
@@ -30,19 +26,23 @@ class MLP(nn.Module):
         for k in range(len(layers) - 2):
             # Linear
             net.append(nn.Linear(layers[k], layers[k + 1]))
-            if layernorm:
-                net.append(nn.LayerNorm(layers[k + 1]))
 
-            # Non-linear
-            if activation == "swish":
-                net.append(Swish(dim=layers[k + 1]))
-            elif activation == "relu":
-                net.append(nn.ReLU())
-            elif activation == "leakyrelu":
-                net.append(nn.LeakyReLU(leaky))
+            # Set Initial values
+            if init == "zero":
+                nn.init.zeros_(net[-1].weight)
+            elif init == "orthogonal":
+                nn.init.orthogonal_(net[-1].weight)
+            elif init == "xavier_uniform":
+                nn.init.xavier_uniform_(net[-1].weight)
+            elif init == "xavier_normal_":
+                nn.init.xavier_normal_(net[-1].weight)
             else:
                 NotImplementedError("This output function is not implemented.")
-            
+
+            if layernorm:
+                net.append(nn.LayerNorm(layers[k + 1]))
+            # Non-linear
+            net.append(Swish(dim=layers[k + 1]))
             # Dropout
             if dropout_rate is not None:
                 net.append(nn.Dropout(p=dropout_rate))
@@ -50,9 +50,16 @@ class MLP(nn.Module):
         net.append(nn.Linear(layers[-2], layers[-1]))
 
         # Set Initial values
-        if init_zeros:
+        if init == "zero":
             nn.init.zeros_(net[-1].weight)
-            nn.init.zeros_(net[-1].bias)
+        elif init == "orthogonal":
+            nn.init.orthogonal_(net[-1].weight)
+        elif init == "xavier_uniform":
+            nn.init.xavier_uniform_(net[-1].weight)
+        elif init == "xavier_normal":
+            nn.init.xavier_normal_(net[-1].weight)
+        else:
+            NotImplementedError("This output function is not implemented.")
 
         # Construct the model
         self.net = nn.Sequential(*net)

@@ -39,6 +39,14 @@ def trainer(tuner):
     cfg["timesteps"] = timesteps
     cfg["experiment"]["directory"] = description
     # --------
+    cfg["gradient_steps"] = 1
+    cfg["discount_factor"] = 0.99    
+    cfg["random_timesteps"] = 100
+    cfg["learning_starts"] = 100
+    cfg["state_preprocessor"] = RunningStandardScaler
+    # logging to TensorBoard and write checkpoints (in timesteps)
+    cfg["experiment"]["write_interval"] = 1000
+    cfg["experiment"]["checkpoint_interval"] = 10000
     
     _train(cfg)
 
