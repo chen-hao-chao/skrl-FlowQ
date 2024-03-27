@@ -45,8 +45,8 @@ def trainer(tuner):
     cfg["learning_starts"] = 100
     cfg["state_preprocessor"] = RunningStandardScaler
     # logging to TensorBoard and write checkpoints (in timesteps)
-    cfg["experiment"]["write_interval"] = 1000
-    cfg["experiment"]["checkpoint_interval"] = 10000
+    cfg["experiment"]["write_interval"] = 100
+    cfg["experiment"]["checkpoint_interval"] = 100
     
     _train(cfg)
 
@@ -62,9 +62,9 @@ def main():
         "lr": tune.grid_search([5e-4, 1e-3]),
         "bs": tune.grid_search([2048, 4096]),
         "num_envs": tune.grid_search([64]),
-        "timesteps": tune.grid_search([1000]),
+        "timesteps": tune.grid_search([200]),
         "id": tune.grid_search([0]),
-        "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results/"]),
+        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results/"]),
     }
     
     analysis = tune.run(

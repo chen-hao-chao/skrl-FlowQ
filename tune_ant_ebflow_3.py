@@ -64,7 +64,7 @@ def main():
         "num_envs": tune.grid_search([256]),
         "timesteps": tune.grid_search([500000]),
         "id": tune.grid_search([0]),
-        "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results/"]),
+        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results/"]),
     }
     
     analysis = tune.run(
