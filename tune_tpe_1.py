@@ -61,16 +61,16 @@ def main():
     ray.init(num_gpus=8)
     
     search_space = {
-        "task_name": tune.grid_search(["Ant"]),
+        "task_name": tune.grid_search(["Humanoid"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.01, 0.005, 0.0025, 0.001]),
-        "alpha": tune.grid_search([0.5, 0.2, 0.1, 0.05, 0.005]),
+        "tau": tune.grid_search([0.005]),
+        "alpha": tune.grid_search([0.2]),
         "lr": tune.grid_search([5e-4, 1e-3]),
-        "loading": tune.grid_search([131072]), #
-        "num_envs": tune.grid_search([64]),
+        "loading": tune.grid_search([131072]),
+        "num_envs": tune.grid_search([32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]),
         "timesteps": tune.grid_search([500000]),
-        "id": tune.grid_search([0]),
-        "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results_sac_ant_tau_alpha/"]),
+        "id": tune.grid_search([0,1]),
+        "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results_sac_humanoid_numenv/"]),
     }
     
     analysis = tune.run(
