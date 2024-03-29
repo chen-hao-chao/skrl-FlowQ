@@ -58,7 +58,7 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=8)
+    ray.init(num_gpus=8) # 1    OR    8
     
     search_space = {
         "task_name": tune.grid_search(["Humanoid"]),
@@ -70,7 +70,7 @@ def main():
         "num_envs": tune.grid_search([32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]),
         "timesteps": tune.grid_search([500000]),
         "id": tune.grid_search([0,1]),
-        "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results_sac_humanoid_numenv/"]),
+        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_humanoid_numenv/"]), #/workspace/skrl-FlowQ/runs/results_sac_humanoid_numenv/   OR   /mnt/nfs/skrl-FlowQ/runs/results_sac_humanoid_numenv/
     }
     
     analysis = tune.run(

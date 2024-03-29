@@ -1,7 +1,7 @@
 import ray
 from ray import tune
 import os
-from torch_ant_ebflow_off import _train
+from trainer_ebflow import _train
 from skrl.agents.torch.ebflow import EBFlow_DEFAULT_CONFIG
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 
@@ -15,6 +15,7 @@ def trainer(tuner):
     num_envs = tuner['num_envs']
     timesteps = tuner['timesteps']
     path = tuner['path']
+    task_name = tuner['task_name']
 
     # 
     description = path + "(id="+ str(id)+")" + \
@@ -30,6 +31,7 @@ def trainer(tuner):
     # configure and instantiate the agent (visit its documentation to see all the options)
     # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
     cfg = EBFlow_DEFAULT_CONFIG.copy()
+    cfg["task_name"] = task_name
     cfg["polyak"] = tau
     cfg["entropy_value"] = alpha
     cfg["grad_norm_clip"] = grad_clip
@@ -40,10 +42,11 @@ def trainer(tuner):
     cfg["experiment"]["directory"] = description
     # --------
     cfg["gradient_steps"] = 1
-    cfg["discount_factor"] = 0.99    
+    cfg["discount_factor"] = 0.99
     cfg["random_timesteps"] = 100
     cfg["learning_starts"] = 100
     cfg["state_preprocessor"] = RunningStandardScaler
+    cfg["memory_size"] = 15000
     # logging to TensorBoard and write checkpoints (in timesteps)
     cfg["experiment"]["write_interval"] = 1000
     cfg["experiment"]["checkpoint_interval"] = 10000
@@ -53,9 +56,10 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=8) # 8
-    
+    ray.init(num_gpus=8) # 1    OR    8
+    # testing time is around 10 minutes.
     search_space = {
+        "task_name": tune.grid_search(["Ant"]),
         "grad_clip": tune.grid_search([30]),
         "tau": tune.grid_search([0.01, 0.005]),
         "alpha": tune.grid_search([0.5, 0.2, 0.1, 0.05, 0.005]),
@@ -64,13 +68,13 @@ def main():
         "num_envs": tune.grid_search([64]),
         "timesteps": tune.grid_search([500000]),
         "id": tune.grid_search([0]),
-        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results/"]),
+        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results/"]), #/workspace/skrl-FlowQ/runs/results/   OR   /mnt/nfs/skrl-FlowQ/runs/results/
     }
     
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        resources_per_trial={'cpu': 1, 'gpu': 0.2}, # 0.2
+        resources_per_trial={'cpu': 1, 'gpu': 0.2},
         config=search_space,
     )
 
