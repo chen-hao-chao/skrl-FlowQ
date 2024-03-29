@@ -67,7 +67,7 @@ def main():
          "alpha": tune.grid_search([0.2, 0.05]),
         "lr": tune.grid_search([3e-4]),
         "loading": tune.grid_search([131072]),
-        "num_envs": tune.grid_search([32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384]),
+        "num_envs": tune.grid_search([32, 64, 128, 256, 512, 1024, 2048, 4096]),
         "timesteps": tune.grid_search([500000]),
         "id": tune.grid_search([0,1]),
         "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_anymal_numenv/"]),
@@ -76,7 +76,7 @@ def main():
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        resources_per_trial={'cpu': 1, 'gpu': 0.2},
+        resources_per_trial={'cpu': 1, 'gpu': 0.25},
         config=search_space,
     )
 
