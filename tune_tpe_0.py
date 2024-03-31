@@ -58,25 +58,25 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=8)
+    ray.init(num_gpus=1) # 1    OR    8
     
     search_space = {
-        "task_name": tune.grid_search(["Ingenuity"]),
+        "task_name": tune.grid_search(["Humanoid"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.005, 0.0025]),
-        "alpha": tune.grid_search([0.8, 0.4, 0.2, 0.1]),
+        "tau": tune.grid_search([0.005]),
+        "alpha": tune.grid_search([0.075, 0.05, 0.025, 0.01]),
         "lr": tune.grid_search([3e-4]),
         "loading": tune.grid_search([131072]),
-        "num_envs": tune.grid_search([128]),
-        "timesteps": tune.grid_search([500000]),
-        "id": tune.grid_search([0,1,2,3,4]),
-        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_ingenuity_baseline/"]),
+        "num_envs": tune.grid_search([131072]),
+        "timesteps": tune.grid_search([100]),
+        "id": tune.grid_search([0]),
+        "path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results_test/"]), #/workspace/skrl-FlowQ/runs/results_sac_humanoid_numenv/   OR   /mnt/nfs/skrl-FlowQ/runs/results_sac_humanoid_numenv/
     }
     
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        resources_per_trial={'cpu': 4, 'gpu': 0.2},
+        resources_per_trial={'cpu': 4, 'gpu': 0.25},
         config=search_space,
     )
 

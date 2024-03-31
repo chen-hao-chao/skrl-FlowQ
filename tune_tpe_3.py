@@ -63,20 +63,20 @@ def main():
     search_space = {
         "task_name": tune.grid_search(["AllegroHand"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.005]),
-        "alpha": tune.grid_search([0.2, 0.05]),
+        "tau": tune.grid_search([0.005, 0.0025]),
+        "alpha": tune.grid_search([0.8, 0.4, 0.2, 0.1]),
         "lr": tune.grid_search([3e-4]),
         "loading": tune.grid_search([131072]),
-        "num_envs": tune.grid_search([64, 128, 256, 512, 1024]),
+        "num_envs": tune.grid_search([512]),
         "timesteps": tune.grid_search([500000]),
-        "id": tune.grid_search([0,1,2,3]),
-        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_allegrohand_numenv/"]),
+        "id": tune.grid_search([0,1,2,3,4]),
+        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_allegrohand_baseline/"]),
     }
     
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        resources_per_trial={'cpu': 1, 'gpu': 0.2},
+        resources_per_trial={'cpu': 4, 'gpu': 0.2},
         config=search_space,
     )
 
