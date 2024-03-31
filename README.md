@@ -81,3 +81,13 @@ PYTHON_PATH tune_tpe_5.py
 PYTHON_PATH tune_tpe_6.py
 ```
 **Important Note:** Make sure that `"path": tune.grid_search(["/workspace/skrl-FlowQ/runs/results/"])` is correct in line 59.
+
+### Ray Tune Bugs
+<p align="center">
+  <img src="https://hackmd.io/_uploads/H16WRCLJA.jpg" alt="ebflow" width="80%">
+</p>
+
+The code is runing without giving error messages. A batch size of `1024` should lead to OofM errors. To reproduce the error, use the following commands:
+```
+PYTHON_PATH tune_debug_tpe_0.py
+```
