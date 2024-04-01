@@ -50,25 +50,25 @@ def trainer(tuner):
     cfg["state_preprocessor"] = RunningStandardScaler
     cfg["memory_size"] = 15000
     # logging to TensorBoard and write checkpoints (in timesteps)
-    cfg["experiment"]["write_interval"] = 1000
-    cfg["experiment"]["checkpoint_interval"] = 10000
+    cfg["experiment"]["write_interval"] = 5000
+    cfg["experiment"]["checkpoint_interval"] = timesteps
     
     _train(cfg)
 
 # ====================================
 
 def main():
-    ray.init(num_gpus=8)
+    ray.init(num_gpus=1)
     
     search_space = {
         "task_name": tune.grid_search(["Ant"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.005, 0.0025]),
-        "alpha": tune.grid_search([0.8, 0.4, 0.2, 0.1]),
+        "tau": tune.grid_search([0.0025]),
+        "alpha": tune.grid_search([0.1]),
         "lr": tune.grid_search([3e-4]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
-        "timesteps": tune.grid_search([500000]),
+        "timesteps": tune.grid_search([1000000]),
         "id": tune.grid_search([0,1,2,3,4]),
         "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_ant_baseline/"]),
     }

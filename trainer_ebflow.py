@@ -57,7 +57,7 @@ class Policy(FlowMixin, Model):
             t2 = MLP(layers_list, init="orthogonal", dropout_rate=dropout_rate_flow, layernorm=layer_norm_flow)
             flows += [MaskedCondAffineFlow(b, t1, s)]
             flows += [MaskedCondAffineFlow(1 - b, t2, s)]
-            flows += [LULinearPermute(action_sizes)]
+            # flows += [LULinearPermute(action_sizes)]
         
         # Construct scaling network and preprocessing
         scale_list = [state_sizes] + [scale_hidden_sizes]*hidden_layers + [1]

@@ -50,8 +50,8 @@ def trainer(tuner):
     cfg["state_preprocessor"] = RunningStandardScaler
     cfg["memory_size"] = 15000
     # logging to TensorBoard and write checkpoints (in timesteps)
-    cfg["experiment"]["write_interval"] = 1000
-    cfg["experiment"]["checkpoint_interval"] = 10000
+    cfg["experiment"]["write_interval"] = 5000
+    cfg["experiment"]["checkpoint_interval"] = timesteps
     
     _train(cfg)
 
@@ -63,12 +63,12 @@ def main():
     search_space = {
         "task_name": tune.grid_search(["AllegroHand"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.005, 0.0025]),
-        "alpha": tune.grid_search([0.8, 0.4, 0.2, 0.1]),
+        "tau": tune.grid_search([0.0025, 0.001]),
+        "alpha": tune.grid_search([0.1, 0.075, 0.05, 0.01]),
         "lr": tune.grid_search([3e-4]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([512]),
-        "timesteps": tune.grid_search([500000]),
+        "timesteps": tune.grid_search([1000000]),
         "id": tune.grid_search([0,1,2,3,4]),
         "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_allegrohand_baseline/"]),
     }

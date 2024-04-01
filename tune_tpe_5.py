@@ -50,8 +50,8 @@ def trainer(tuner):
     cfg["state_preprocessor"] = RunningStandardScaler
     cfg["memory_size"] = 15000
     # logging to TensorBoard and write checkpoints (in timesteps)
-    cfg["experiment"]["write_interval"] = 1000
-    cfg["experiment"]["checkpoint_interval"] = 10000
+    cfg["experiment"]["write_interval"] = 5000
+    cfg["experiment"]["checkpoint_interval"] = timesteps
     
     _train(cfg)
 
@@ -63,8 +63,8 @@ def main():
     search_space = {
         "task_name": tune.grid_search(["FrankaCabinet"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.005, 0.0025]),
-        "alpha": tune.grid_search([0.8, 0.4, 0.2, 0.1]),
+        "tau": tune.grid_search([0.005, 0.01, 0.05, 0.025]),
+        "alpha": tune.grid_search([0.2, 0.1]),
         "lr": tune.grid_search([3e-4]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([512]),
