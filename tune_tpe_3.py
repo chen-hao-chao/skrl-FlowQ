@@ -72,7 +72,7 @@ def main():
         "timesteps": tune.grid_search([500000]),
         "random_timesteps": tune.grid_search([0]),
         "id": tune.grid_search([0,1]),
-        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_ebflow_anymal/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
+        "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_anymal/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }
     
     analysis = tune.run(
