@@ -1,8 +1,8 @@
 import ray
 from ray import tune
 import os
-from trainer_sac import _train
-from skrl.agents.torch.sac import SAC_DEFAULT_CONFIG
+from trainer_ebflow import _train
+from skrl.agents.torch.ebflow import EBFlow_DEFAULT_CONFIG
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 
 def trainer(tuner):
@@ -17,6 +17,7 @@ def trainer(tuner):
     timesteps = tuner['timesteps']
     path = tuner['path']
     task_name = tuner['task_name']
+    random_timesteps = tuner['random_timesteps']
 
     # 
     description = path + "(id="+ str(id)+")" + \
@@ -31,16 +32,16 @@ def trainer(tuner):
     # rewrite base config
     # configure and instantiate the agent (visit its documentation to see all the options)
     # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
-    cfg = SAC_DEFAULT_CONFIG.copy()
+    cfg = EBFlow_DEFAULT_CONFIG.copy()
     cfg["task_name"] = task_name
     cfg["polyak"] = tau
-    cfg["initial_entropy_value"] = alpha
+    cfg["entropy_value"] = alpha
     cfg["grad_norm_clip"] = grad_clip
-    cfg["actor_learning_rate"] = lr
-    cfg["critic_learning_rate"] = lr
+    cfg["learning_rate"] = lr
     cfg["batch_size"] = bs
     cfg["num_envs"] = num_envs
     cfg["timesteps"] = timesteps
+    cfg["random_timesteps"] = random_timesteps
     cfg["experiment"]["directory"] = description
     # --------
     cfg["gradient_steps"] = 1
@@ -58,25 +59,26 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=1)
+    ray.init(num_gpus=8) # 1    OR    8
     
     search_space = {
         "task_name": tune.grid_search(["Ant"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.0025]),
-        "alpha": tune.grid_search([0.1]),
-        "lr": tune.grid_search([3e-4]),
+        "tau": tune.grid_search([0.005, 0.001, 0.0005, 0.0001]),
+        "alpha": tune.grid_search([0.2, 0.1, 0.05, 0.01]),
+        "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
-        "timesteps": tune.grid_search([1000000]),
-        "id": tune.grid_search([0,1,2,3,4]),
-        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_ant_baseline/"]),
+        "timesteps": tune.grid_search([500000]),
+        "random_timesteps": tune.grid_search([0]),
+        "id": tune.grid_search([0,1]),
+        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_ebflow_ant/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }
     
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        resources_per_trial={'cpu': 4, 'gpu': 0.2},
+        resources_per_trial={'cpu': 4, 'gpu': 0.25},
         config=search_space,
     )
 
