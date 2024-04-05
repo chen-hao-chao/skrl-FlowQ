@@ -48,7 +48,7 @@ To cite this library in publications, please use the following reference:
 }
 ```
 
-### Reproducing EBFlow
+### Reproducing SAC Baseline
 <p align="center">
   <img src="src/performance_sac.png" alt="ebflow" width="95%">
 </p>
