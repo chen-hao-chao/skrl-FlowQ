@@ -23,6 +23,7 @@ def trainer(tuner):
     description = path + "(id="+ str(id)+")" + \
                     "(lr="+ str(lr)+")" + \
                     "(bs="+ str(bs)+")" + \
+                    "(rnd_ts="+ str(random_timesteps)+")" + \
                     "(envs="+ str(num_envs)+")" + \
                     "(ts="+ str(timesteps)+")" + \
                     "(gc="+ str(grad_clip)+")" + \
@@ -64,8 +65,8 @@ def main():
     search_space = {
         "task_name": tune.grid_search(["Humanoid"]),
         "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.005, 0.0025, 0.001, 0.0005]),
-        "alpha": tune.grid_search([0.2, 0.1, 0.05, 0.01]),
+        "tau": tune.grid_search([0.0005, 0.00025, 0.0001, 0.00005]),
+        "alpha": tune.grid_search([0.2, 0.25, 0.5, 0.75]),
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
