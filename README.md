@@ -50,12 +50,16 @@ To cite this library in publications, please use the following reference:
 
 ### Reproducing EBFlow
 <p align="center">
-  <img src="https://hackmd.io/_uploads/S1IJlTICa.png" alt="ebflow" width="40%">
+  <img src="src/performance_sac.png" alt="ebflow" width="95%">
 </p>
 
 ```
-// Off-policy EBFlow on Issac-Ant
-PYTHON_PATH torch_ant_ebflow_off.py
+PYTHON_PATH tune_sac_allegro.py
+PYTHON_PATH tune_sac_ant.py
+PYTHON_PATH tune_sac_anymal.py
+PYTHON_PATH tune_sac_franka.py
+PYTHON_PATH tune_sac_humanoid.py
+PYTHON_PATH tune_sac_ingenuity.py
 ```
 
 ### Ray Tune Commands
