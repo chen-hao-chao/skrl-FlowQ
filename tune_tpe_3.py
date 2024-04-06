@@ -64,10 +64,10 @@ def main():
     
     search_space = {
         "task_name": tune.grid_search(["Anymal"]),
-        "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.0075, 0.01, 0.025, 0.05]),
-        "alpha": tune.grid_search([0.05, 0.01, 0.005, 0.001]),
-        "lr": tune.grid_search([1e-3, 5e-4]),
+        "grad_clip": tune.grid_search([0, 30]),
+        "tau": tune.grid_search([0.02, 0.025]),
+        "alpha": tune.grid_search([0.001, 0.00075, 0.0005, 0.0001]),
+        "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
         "timesteps": tune.grid_search([500000]),

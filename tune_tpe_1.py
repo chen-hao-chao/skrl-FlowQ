@@ -64,14 +64,14 @@ def main():
     
     search_space = {
         "task_name": tune.grid_search(["Humanoid"]),
-        "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.0005, 0.00025, 0.0001, 0.00005]),
-        "alpha": tune.grid_search([0.2, 0.25, 0.5, 0.75]),
+        "grad_clip": tune.grid_search([0, 30]),
+        "tau": tune.grid_search([0.0005, 0.00025]),
+        "alpha": tune.grid_search([0.2, 0.25]),
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
         "timesteps": tune.grid_search([500000]),
-        "random_timesteps": tune.grid_search([0]),
+        "random_timesteps": tune.grid_search([0, 1000]),
         "id": tune.grid_search([0,1]),
         "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_humanoid/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }

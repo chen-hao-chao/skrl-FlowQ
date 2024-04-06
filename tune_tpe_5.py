@@ -64,15 +64,15 @@ def main():
     
     search_space = {
         "task_name": tune.grid_search(["AllegroHand"]),
-        "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.0075, 0.005, 0.0015, 0.001]),
-        "alpha": tune.grid_search([0.1, 0.075, 0.025, 0.005]),
+        "grad_clip": tune.grid_search([0, 30]),
+        "tau": tune.grid_search([0.001]),
+        "alpha": tune.grid_search([0.1]),
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([512]),
         "timesteps": tune.grid_search([500000]),
-        "random_timesteps": tune.grid_search([0]),
-        "id": tune.grid_search([0,1]),
+        "random_timesteps": tune.grid_search([0, 500, 1000, 5000]),
+        "id": tune.grid_search([0,1,2,3]),
         "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_allegro/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }
     

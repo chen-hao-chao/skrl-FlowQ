@@ -64,15 +64,15 @@ def main():
     
     search_space = {
         "task_name": tune.grid_search(["Ant"]),
-        "grad_clip": tune.grid_search([0]),
-        "tau": tune.grid_search([0.0005, 0.00075]),
-        "alpha": tune.grid_search([0.1, 0.075]),
+        "grad_clip": tune.grid_search([0, 30]),
+        "tau": tune.grid_search([0.0005]),
+        "alpha": tune.grid_search([0.075]),
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
         "timesteps": tune.grid_search([500000]),
-        "random_timesteps": tune.grid_search([0, 100, 1000, 5000]),
-        "id": tune.grid_search([0,1]),
+        "random_timesteps": tune.grid_search([0, 100, 500, 1000]),
+        "id": tune.grid_search([0,1,2,3]),
         "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_ant/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }
     
