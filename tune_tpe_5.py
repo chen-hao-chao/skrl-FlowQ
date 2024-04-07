@@ -18,6 +18,8 @@ def trainer(tuner):
     path = tuner['path']
     task_name = tuner['task_name']
     random_timesteps = tuner['random_timesteps']
+    sigma_max = tuner['sigma_max']
+    sigma_min = tuner['sigma_min']
 
     # 
     description = path + "(id="+ str(id)+")" + \
@@ -28,7 +30,9 @@ def trainer(tuner):
                     "(ts="+ str(timesteps)+")" + \
                     "(gc="+ str(grad_clip)+")" + \
                     "(tau="+ str(tau)+")" + \
-                    "(alpha="+ str(alpha)+")"
+                    "(alpha="+ str(alpha)+")" + \
+                    "(sigma_max="+ str(sigma_max)+")" + \
+                    "(sigma_min="+ str(sigma_min)+")"
     
     # rewrite base config
     # configure and instantiate the agent (visit its documentation to see all the options)
@@ -43,6 +47,8 @@ def trainer(tuner):
     cfg["num_envs"] = num_envs
     cfg["timesteps"] = timesteps
     cfg["random_timesteps"] = random_timesteps
+    cfg["sigma_max"] = sigma_max
+    cfg["sigma_min"] = sigma_min
     cfg["experiment"]["directory"] = description
     # --------
     cfg["gradient_steps"] = 1
@@ -64,14 +70,16 @@ def main():
     
     search_space = {
         "task_name": tune.grid_search(["AllegroHand"]),
-        "grad_clip": tune.grid_search([0, 30]),
+        "grad_clip": tune.grid_search([30]),
         "tau": tune.grid_search([0.001]),
         "alpha": tune.grid_search([0.1]),
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([512]),
         "timesteps": tune.grid_search([500000]),
-        "random_timesteps": tune.grid_search([0, 500, 1000, 5000]),
+        "random_timesteps": tune.grid_search([100, 500]),
+        "sigma_max": tune.grid_search([-0.3, 2.0]),
+        "sigma_min": tune.grid_search([-5.0, -4.0]),
         "id": tune.grid_search([0,1,2,3]),
         "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_allegro/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }

@@ -39,6 +39,9 @@ EBFlow_DEFAULT_CONFIG = {
 
     "rewards_shaper": None,         # rewards shaping function: Callable(reward, timestep, timesteps) -> reward
 
+    "sigma_max": -0.3,
+    "sigma_min": -5.0,
+
     # variables for the on-policy variant
     "is_on_policy": False,   # Set true for on-policy updates
     "rollouts": 16,

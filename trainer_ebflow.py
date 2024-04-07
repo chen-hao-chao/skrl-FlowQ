@@ -19,22 +19,22 @@ from normflows.flows import MaskedCondAffineFlow, CondScaling, LULinearPermute
 
 # define models (stochastic and deterministic models) using mixins
 class Policy(FlowMixin, Model):
-    def __init__(self, observation_space, action_space, device, alpha, reduction="sum"):
+    def __init__(self, observation_space, action_space, device, alpha, sigma_max, sigma_min, reduction="sum"):
         Model.__init__(self, observation_space, action_space, device)
         FlowMixin.__init__(self, reduction)
-        flows, q0 = self.init_Coupling(self.num_observations, self.num_actions)
+        flows, q0 = self.init_Coupling(self.num_observations, self.num_actions, sigma_max=sigma_max, sigma_min=sigma_min)
         self.flows = nn.ModuleList(flows).to(self.device)
         self.prior = q0.to(self.device)
         self.alpha = alpha
         self.unit_test(num_samples=10, scale=1)
 
-    def init_Coupling(self, state_sizes, action_sizes):
+    def init_Coupling(self, state_sizes, action_sizes, sigma_max=-0.3, sigma_min=-5):
         dropout_rate_flow = 0.1
         dropout_rate_scale = 0
         layer_norm_flow = True
         layer_norm_scale = False
-        sigma_max = -0.3
-        sigma_min = -5
+        # sigma_max = -0.3
+        # sigma_min = -5
         prior_transform = True # set True to perform additional tanh scaling for unlearnable prior.
         hidden_sizes = 64
         scale_hidden_sizes = 256
@@ -91,8 +91,8 @@ def _train(cfg):
     # SAC requires 5 models, visit its documentation for more details
     # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#models
     models = {}
-    models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
-    models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'])
+    models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'], sigma_max=cfg['sigma_max'], sigma_min=cfg['sigma_min'])
+    models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'], sigma_max=cfg['sigma_max'], sigma_min=cfg['sigma_min'])
 
     agent = EBFlow(models=models,
                 memory=memory,
