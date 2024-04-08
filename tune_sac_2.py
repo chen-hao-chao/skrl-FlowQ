@@ -42,7 +42,7 @@ def trainer(tuner):
     cfg["state_preprocessor"] = RunningStandardScaler
     cfg["memory_size"] = 15000
     # logging to TensorBoard and write checkpoints (in timesteps)
-    cfg["experiment"]["write_interval"] = 1000
+    cfg["experiment"]["write_interval"] = 5000
     cfg["experiment"]["checkpoint_interval"] = timesteps
     
     _train(cfg)
