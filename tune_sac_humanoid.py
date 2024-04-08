@@ -18,15 +18,7 @@ def trainer(tuner):
     path = tuner['path']
     task_name = tuner['task_name']
 
-    # 
-    description = path + "(id="+ str(id)+")" + \
-                    "(lr="+ str(lr)+")" + \
-                    "(bs="+ str(bs)+")" + \
-                    "(envs="+ str(num_envs)+")" + \
-                    "(ts="+ str(timesteps)+")" + \
-                    "(gc="+ str(grad_clip)+")" + \
-                    "(tau="+ str(tau)+")" + \
-                    "(alpha="+ str(alpha)+")"
+    description = path + str(id)
     
     # rewrite base config
     # configure and instantiate the agent (visit its documentation to see all the options)
@@ -58,7 +50,7 @@ def trainer(tuner):
 # ====================================
 
 def main():
-    ray.init(num_gpus=1) # 1    OR    8
+    ray.init(num_gpus=4) # 1    OR    8
     
     search_space = {
         "task_name": tune.grid_search(["Humanoid"]),
@@ -69,14 +61,14 @@ def main():
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
         "timesteps": tune.grid_search([1000000]),
-        "id": tune.grid_search([0,1,2,3,4]),
-        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_sac_humanoid_baseline/"]), #/workspace/skrl-FlowQ/runs/results_sac_humanoid_numenv/   OR   /mnt/nfs/skrl-FlowQ/runs/results_sac_humanoid_numenv/
+        "id": tune.grid_search([0,1,2, 3,4,5, 6,7,8, 9,10,11]),
+        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_humanoid/sac/"]),
     }
     
     analysis = tune.run(
         trainer, 
         num_samples=1,
-        resources_per_trial={'cpu': 4, 'gpu': 0.2},
+        resources_per_trial={'cpu': 4, 'gpu': 0.33},
         config=search_space,
     )
 
