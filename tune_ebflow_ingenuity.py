@@ -65,8 +65,8 @@ def trainer(tuner):
 
 # ====================================
 
-def main():
-    ray.init(num_gpus=8) # 1    OR    8
+def main(): # closed
+    ray.init(num_gpus=1) # 1    OR    8
     
     search_space = {
         "task_name": tune.grid_search(["Ingenuity"]),
@@ -77,9 +77,9 @@ def main():
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
         "timesteps": tune.grid_search([500000]),
-        "random_timesteps": tune.grid_search([0, 100]),
-        "sigma_max": tune.grid_search([-0.3, 2.0]),
-        "sigma_min": tune.grid_search([-5.0, -4.0]),
+        "random_timesteps": tune.grid_search([0]),
+        "sigma_max": tune.grid_search([-0.3]),
+        "sigma_min": tune.grid_search([-4.0]),
         "id": tune.grid_search([0,1,2,3]),
         "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_ingenuity/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }

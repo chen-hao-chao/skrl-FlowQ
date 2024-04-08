@@ -65,23 +65,23 @@ def trainer(tuner):
 
 # ====================================
 
-def main():
-    ray.init(num_gpus=8) # 1    OR    8
+def main(): # closed
+    ray.init(num_gpus=4) # 1    OR    8
     
     search_space = {
-        "task_name": tune.grid_search(["Ant"]),
-        "grad_clip": tune.grid_search([0, 30]),
-        "tau": tune.grid_search([0.0005]),
-        "alpha": tune.grid_search([0.075]),
+        "task_name": tune.grid_search(["AllegroHand"]),
+        "grad_clip": tune.grid_search([30]),
+        "tau": tune.grid_search([0.001]),
+        "alpha": tune.grid_search([0.1]),
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
-        "num_envs": tune.grid_search([128]),
+        "num_envs": tune.grid_search([512]),
         "timesteps": tune.grid_search([500000]),
-        "random_timesteps": tune.grid_search([100]),
-        "sigma_max": tune.grid_search([-0.3, 2.0]),
-        "sigma_min": tune.grid_search([-5.0, -4.0]),
-        "id": tune.grid_search([0,1,2,3]),
-        "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_ant/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
+        "random_timesteps": tune.grid_search([100, 500]),
+        "sigma_max": tune.grid_search([-0.3]),
+        "sigma_min": tune.grid_search([-4.0]),
+        "id": tune.grid_search([0,1,2,3, 4,5,6,7]),
+        "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ebflow_allegro/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }
     
     analysis = tune.run(
