@@ -62,7 +62,7 @@ def main():
         "num_envs": tune.grid_search([128]),
         "timesteps": tune.grid_search([1000000]),
         "id": tune.grid_search([0,1,2, 3,4,5, 6,7,8, 9,10,11]),
-        "path": tune.grid_search(["/mnt/nfs/skrl-FlowQ/runs/results_ant/sac/"]),
+        "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ant/sac/"]),
     }
     
     analysis = tune.run(
