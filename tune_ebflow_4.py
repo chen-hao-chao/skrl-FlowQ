@@ -76,7 +76,7 @@ def main(): # conti
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([512]),
-        "timesteps": tune.grid_search([500000]),
+        "timesteps": tune.grid_search([1000000]),
         "random_timesteps": tune.grid_search([100]),
         "sigma_max": tune.grid_search([-0.3]),
         "sigma_min": tune.grid_search([-5.0]),

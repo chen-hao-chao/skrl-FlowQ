@@ -66,7 +66,7 @@ def trainer(tuner):
 # ====================================
 
 def main(): # conti
-    ray.init(num_gpus=8) # 1    OR    8
+    ray.init(num_gpus=4) # 1    OR    8
     
     search_space = {
         "task_name": tune.grid_search(["Anymal"]),
@@ -76,11 +76,11 @@ def main(): # conti
         "lr": tune.grid_search([1e-3]),
         "loading": tune.grid_search([131072]),
         "num_envs": tune.grid_search([128]),
-        "timesteps": tune.grid_search([500000]),
+        "timesteps": tune.grid_search([1000000]),
         "random_timesteps": tune.grid_search([100]),
-        "sigma_max": tune.grid_search([-0.75, -1.0, -1.5, -2.0]),
+        "sigma_max": tune.grid_search([-1.0]),
         "sigma_min": tune.grid_search([-5.0]),
-        "id": tune.grid_search([0,1,2, 3,4,5]),
+        "id": tune.grid_search([0,1,2, 3,4,5, 6,7,8, 9,10,11]),
         "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_anymal/ebflow/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }
     
