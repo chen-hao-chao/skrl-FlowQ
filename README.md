@@ -50,16 +50,24 @@ To cite this library in publications, please use the following reference:
 
 ### Reproducing SAC Baseline
 <p align="center">
-  <img src="src/performance_sac.png" alt="ebflow" width="95%">
+  <img src="src/performance.png" alt="ebflow" width="95%">
 </p>
 
 ```
-PYTHON_PATH tune_sac_allegro.py
-PYTHON_PATH tune_sac_ant.py
-PYTHON_PATH tune_sac_anymal.py
-PYTHON_PATH tune_sac_franka.py
-PYTHON_PATH tune_sac_humanoid.py
-PYTHON_PATH tune_sac_ingenuity.py
+#
+PYTHON_PATH tune_sac_1.py
+PYTHON_PATH tune_sac_2.py
+PYTHON_PATH tune_sac_3.py
+PYTHON_PATH tune_sac_4.py
+PYTHON_PATH tune_sac_5.py
+PYTHON_PATH tune_sac_6.py
+
+PYTHON_PATH tune_ebflow_1.py
+PYTHON_PATH tune_ebflow_2.py
+PYTHON_PATH tune_ebflow_3.py
+PYTHON_PATH tune_ebflow_4.py
+PYTHON_PATH tune_ebflow_5.py
+PYTHON_PATH tune_ebflow_6.py
 ```
 
 ### Ray Tune Commands
