@@ -21,18 +21,7 @@ def trainer(tuner):
     sigma_max = tuner['sigma_max']
     sigma_min = tuner['sigma_min']
 
-    # 
-    description = path + "(id="+ str(id)+")" + \
-                    "(lr="+ str(lr)+")" + \
-                    "(bs="+ str(bs)+")" + \
-                    "(rnd_ts="+ str(random_timesteps)+")" + \
-                    "(envs="+ str(num_envs)+")" + \
-                    "(ts="+ str(timesteps)+")" + \
-                    "(gc="+ str(grad_clip)+")" + \
-                    "(tau="+ str(tau)+")" + \
-                    "(alpha="+ str(alpha)+")" + \
-                    "(sigma_max="+ str(sigma_max)+")" + \
-                    "(sigma_min="+ str(sigma_min)+")"
+    description = path + str(id)
     
     # rewrite base config
     # configure and instantiate the agent (visit its documentation to see all the options)
