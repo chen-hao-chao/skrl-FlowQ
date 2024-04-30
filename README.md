@@ -106,7 +106,7 @@ PYTHON_PATH tune_debug_tpe_0.py
 
 ## Evaluation
 ### Step 1
-- 1.1 Download the checkpoints (`_results_isaac_compare`) at .
+- 1.1 Download the checkpoints (`_results_isaac_compare`) at https://drive.google.com/file/d/1QyO7pPjpKGN0kguPAyj3Kl7PNx6jVqCK/view?usp=drive_link.
 - 1.2 Run `unzip _results_isaac_compare.zip` at the desired directory.
 
 ### Step 2
