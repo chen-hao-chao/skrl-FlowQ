@@ -18,10 +18,8 @@ from normflows.distributions import MyConditionalDiagGaussian
 from normflows.flows import MaskedCondAffineFlow, CondScaling, LULinearPermute
 
 # define models (stochastic and deterministic models) using mixins
-class Policy(FlowMixin, Model):
-    def __init__(self, observation_space, action_space, device, alpha, sigma_max, sigma_min, reduction="sum"):
-        Model.__init__(self, observation_space, action_space, device)
-        FlowMixin.__init__(self, reduction)
+class Policy(nn.Module):
+    def __init__(self, alpha, sigma_max, sigma_min):
         flows, q0 = self.init_Coupling(self.num_observations, self.num_actions, sigma_max=sigma_max, sigma_min=sigma_min)
         self.flows = nn.ModuleList(flows).to(self.device)
         self.prior = q0.to(self.device)
@@ -57,7 +55,6 @@ class Policy(FlowMixin, Model):
             t2 = MLP(layers_list, init="orthogonal", dropout_rate=dropout_rate_flow, layernorm=layer_norm_flow)
             flows += [MaskedCondAffineFlow(b, t1, s)]
             flows += [MaskedCondAffineFlow(1 - b, t2, s)]
-            # flows += [LULinearPermute(action_sizes)]
         
         # Construct scaling network and preprocessing
         scale_list = [state_sizes] + [scale_hidden_sizes]*hidden_layers + [1]
@@ -107,6 +104,25 @@ def _train(cfg):
 
     # start training
     trainer.train()
+
+def _test(cfg):
+    set_seed()
+
+    env = load_omniverse_isaacgym_env(
+        task_name=cfg['task_name'],
+        headless=True,
+        num_envs=cfg['num_envs'],
+        parse_args=False,
+    )
+    env = wrap_env(env)
+    device = env.device
+    cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
+
+    path_load = cfg["experiment"]["directory"]
+    agent = torch.load(path_load)
+
+    # (your testing code here)
+    print("print!")
 
 def main():
     # configure and instantiate the agent (visit its documentation to see all the options)

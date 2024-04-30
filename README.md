@@ -103,3 +103,33 @@ The code is runing without giving error messages. A batch size of `1024` should 
 ```
 PYTHON_PATH tune_debug_tpe_0.py
 ```
+
+## Evaluation
+### Step 1
+- 1.1 Download the checkpoints (`_results_isaac_compare`) at .
+- 1.2 Run `unzip _results_isaac_compare.zip` at the desired directory.
+
+### Step 2
+Change `env_id` (avaliable options: `AllegroHand`, `Ant`, `Anymal`, `FrankaCabinet`, `Humanoid`, `Ingenuity`) in Line 104 of `test_ebflow.py`:
+```
+if __name__ == '__main__':
+    env_id = "AllegroHand"
+    main(env_id)
+```
+
+### Step 3
+- 3.1 Put your inference code in Line 124 
+- 3.2 Use the pretrained agent defined at Lines 121 and 122.
+```
+path_load = cfg["experiment"]["directory"]
+agent = torch.load(path_load)
+
+# (your testing code here)
+print("print!")
+```
+
+### Step 4
+Execute the following command:
+```
+PYTHON_PATH test_ebflow.py
+```
