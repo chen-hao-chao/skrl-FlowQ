@@ -125,8 +125,9 @@ path_load = cfg["experiment"]["directory"]
 agent = torch.load(path_load)
 
 # (your testing code here)
-print("print!")
+print("success!")
 ```
+- 3.3 Check if the command lines displays `success!`.
 
 ### Step 4
 Execute the following command:
