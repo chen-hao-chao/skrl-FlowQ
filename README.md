@@ -118,8 +118,8 @@ if __name__ == '__main__':
 ```
 
 ### Step 3
-- 3.1 Put your inference code in Line 124 
-- 3.2 Use the pretrained agent defined at Lines 121 and 122.
+- 3.1 Put your inference code in Line 124 of `trainer_ebflow.py`.
+- 3.2 Use the pretrained agent defined at Lines 121 and 122 of `trainer_ebflow.py`.
 ```
 path_load = cfg["experiment"]["directory"]
 agent = torch.load(path_load)
