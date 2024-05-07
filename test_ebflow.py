@@ -13,8 +13,8 @@ def main(env_id):
         cfg["entropy_value"] = 0.1
         cfg["grad_norm_clip"] = 30
         cfg["learning_rate"] = 1e-3
-        cfg["batch_size"] = int(131072 / 512)
-        cfg["num_envs"] = 512
+        cfg["batch_size"] = 1
+        cfg["num_envs"] = 1
         cfg["timesteps"] = 1000000
         cfg["random_timesteps"] = 100
         cfg["sigma_max"] = -0.3
@@ -26,8 +26,8 @@ def main(env_id):
         cfg["entropy_value"] = 0.075
         cfg["grad_norm_clip"] = 30
         cfg["learning_rate"] = 1e-3
-        cfg["batch_size"] = int(131072 / 128)
-        cfg["num_envs"] = 128
+        cfg["batch_size"] = 1
+        cfg["num_envs"] = 1
         cfg["timesteps"] = 1000000
         cfg["random_timesteps"] = 100
         cfg["sigma_max"] = 2.0
@@ -39,8 +39,8 @@ def main(env_id):
         cfg["entropy_value"] = 0.00075
         cfg["grad_norm_clip"] = 30
         cfg["learning_rate"] = 1e-3
-        cfg["batch_size"] = int(131072 / 128)
-        cfg["num_envs"] = 128
+        cfg["batch_size"] = 1
+        cfg["num_envs"] = 1
         cfg["timesteps"] = 1000000
         cfg["random_timesteps"] = 100
         cfg["sigma_max"] = -1.0
@@ -52,8 +52,8 @@ def main(env_id):
         cfg["entropy_value"] = 0.075
         cfg["grad_norm_clip"] = 30
         cfg["learning_rate"] = 1e-3
-        cfg["batch_size"] = int(131072 / 512)
-        cfg["num_envs"] = 512
+        cfg["batch_size"] = 1
+        cfg["num_envs"] = 1
         cfg["timesteps"] = 1000000
         cfg["random_timesteps"] = 100
         cfg["sigma_max"] = -0.3
@@ -65,8 +65,8 @@ def main(env_id):
         cfg["entropy_value"] = 0.25
         cfg["grad_norm_clip"] = 30
         cfg["learning_rate"] = 1e-3
-        cfg["batch_size"] = int(131072 / 128)
-        cfg["num_envs"] = 128
+        cfg["batch_size"] = 1
+        cfg["num_envs"] = 1
         cfg["timesteps"] = 1000000
         cfg["random_timesteps"] = 100
         cfg["sigma_max"] = -0.3
@@ -78,8 +78,8 @@ def main(env_id):
         cfg["entropy_value"] = 0.025
         cfg["grad_norm_clip"] = 30
         cfg["learning_rate"] = 1e-3
-        cfg["batch_size"] = int(131072 / 128)
-        cfg["num_envs"] = 128
+        cfg["batch_size"] = 1
+        cfg["num_envs"] = 1
         cfg["timesteps"] = 1000000
         cfg["random_timesteps"] = 100
         cfg["sigma_max"] = -0.3

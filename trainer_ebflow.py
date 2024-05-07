@@ -16,10 +16,11 @@ from normflows.nets import MLP
 from normflows.transforms import Preprocessing
 from normflows.distributions import MyConditionalDiagGaussian
 from normflows.flows import MaskedCondAffineFlow, CondScaling, LULinearPermute
-
 # define models (stochastic and deterministic models) using mixins
-class Policy(nn.Module):
-    def __init__(self, alpha, sigma_max, sigma_min):
+class Policy(FlowMixin, Model):
+    def __init__(self, observation_space, action_space, device, alpha, sigma_max, sigma_min, reduction="sum"):
+        Model.__init__(self, observation_space, action_space, device)
+        FlowMixin.__init__(self, reduction)
         flows, q0 = self.init_Coupling(self.num_observations, self.num_actions, sigma_max=sigma_max, sigma_min=sigma_min)
         self.flows = nn.ModuleList(flows).to(self.device)
         self.prior = q0.to(self.device)
@@ -55,6 +56,7 @@ class Policy(nn.Module):
             t2 = MLP(layers_list, init="orthogonal", dropout_rate=dropout_rate_flow, layernorm=layer_norm_flow)
             flows += [MaskedCondAffineFlow(b, t1, s)]
             flows += [MaskedCondAffineFlow(1 - b, t2, s)]
+            # flows += [LULinearPermute(action_sizes)]
         
         # Construct scaling network and preprocessing
         scale_list = [state_sizes] + [scale_hidden_sizes]*hidden_layers + [1]
@@ -108,33 +110,54 @@ def _train(cfg):
 def _test(cfg):
     set_seed()
 
+    path_load = cfg["experiment"]["directory"]
+    cfg["experiment"]["directory"] = "runs/torch/"+cfg['task_name']
+
     env = load_omniverse_isaacgym_env(
         task_name=cfg['task_name'],
         headless=True,
-        num_envs=cfg['num_envs'],
+        num_envs=1,
         parse_args=False,
     )
     env = wrap_env(env)
     device = env.device
     cfg["state_preprocessor_kwargs"] = {"size": env.observation_space, "device": device}
 
-    path_load = cfg["experiment"]["directory"]
-    agent = torch.load(path_load)
+    # instantiate a memory as rollout buffer (any memory can be used for this)
+    memory = RandomMemory(memory_size=cfg["memory_size"], num_envs=env.num_envs, device=device)
 
-    # (your testing code here)
-    print("print!")
+    models = {}
+    models["policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'], sigma_max=cfg['sigma_max'], sigma_min=cfg['sigma_min'])
+    models["target_policy"] = Policy(env.observation_space, env.action_space, device, alpha=cfg['entropy_value'], sigma_max=cfg['sigma_max'], sigma_min=cfg['sigma_min'])
+
+    agent = EBFlow(models=models,
+                    memory=memory,
+                    cfg=cfg,
+                    observation_space=env.observation_space,
+                    action_space=env.action_space,
+                    device=device)
+    
+    agent.load(path_load)
+
+    # configure and instantiate the RL trainer
+    cfg_trainer = {"timesteps": cfg["timesteps"], "headless": True}
+    trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
+
+    # start training
+    trainer.eval()
 
 def main():
     # configure and instantiate the agent (visit its documentation to see all the options)
     # https://skrl.readthedocs.io/en/latest/api/agents/sac.html#configuration-and-hyperparameters
     cfg = EBFlow_DEFAULT_CONFIG.copy()
+    cfg["task_name"] = "Ingenuity"
     cfg["batch_size"] = 4096
     cfg["polyak"] = 0.005
     cfg["learning_rate"] = 5e-4
     cfg["grad_norm_clip"] = 10
     cfg["num_envs"] = 64
     cfg["timesteps"] = 160000
-    cfg["experiment"]["directory"] = "runs/torch/Ant"
+    cfg["experiment"]["directory"] = "runs/torch/AllegroHand"
     _train(cfg)
 
 if __name__ == '__main__':
