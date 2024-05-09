@@ -58,7 +58,7 @@ def main(env_id):
         cfg["random_timesteps"] = 100
         cfg["sigma_max"] = -0.3
         cfg["sigma_min"] = -5.0
-        cfg["experiment"]["directory"] = "_results_isaac_compare/standard/FrankaCabinet/meow/1/24-04-10_08-35-08-604878_EBFlow/checkpoints/best_agent.pt" # checkpoint
+        cfg["experiment"]["directory"] = "_results_isaac_compare/standard/Franka/meow/1/24-04-10_08-35-08-604878_EBFlow/checkpoints/best_agent.pt" # checkpoint
     elif env_id == "Humanoid":
         cfg["task_name"] = "Humanoid"
         cfg["polyak"] = 0.00025
