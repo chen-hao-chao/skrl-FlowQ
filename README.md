@@ -14,22 +14,22 @@
 
 ### Reproducing the Results of SAC
 ```
-PYTHON_PATH tune_sac_1.py
-PYTHON_PATH tune_sac_2.py
-PYTHON_PATH tune_sac_3.py
-PYTHON_PATH tune_sac_4.py
-PYTHON_PATH tune_sac_5.py
-PYTHON_PATH tune_sac_6.py
+PYTHON_PATH sac_1.py
+PYTHON_PATH sac_2.py
+PYTHON_PATH sac_3.py
+PYTHON_PATH sac_4.py
+PYTHON_PATH sac_5.py
+PYTHON_PATH sac_6.py
 ```
 
 ### Reproducing the Results of MEow
 ```
-PYTHON_PATH tune_ebflow_1.py
-PYTHON_PATH tune_ebflow_2.py
-PYTHON_PATH tune_ebflow_3.py
-PYTHON_PATH tune_ebflow_4.py
-PYTHON_PATH tune_ebflow_5.py
-PYTHON_PATH tune_ebflow_6.py
+PYTHON_PATH meow_1.py
+PYTHON_PATH meow_2.py
+PYTHON_PATH meow_3.py
+PYTHON_PATH meow_4.py
+PYTHON_PATH meow_5.py
+PYTHON_PATH meow_6.py
 ```
 
 ### Citing SKRL Library
