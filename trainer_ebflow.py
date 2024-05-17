@@ -115,7 +115,7 @@ def _test(cfg):
 
     env = load_omniverse_isaacgym_env(
         task_name=cfg['task_name'],
-        headless=True,
+        headless=False,
         num_envs=1,
         parse_args=False,
     )
@@ -140,7 +140,7 @@ def _test(cfg):
     agent.load(path_load)
 
     # configure and instantiate the RL trainer
-    cfg_trainer = {"timesteps": cfg["timesteps"], "headless": True}
+    cfg_trainer = {"timesteps": cfg["timesteps"], "headless": False}
     trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
 
     # start training
