@@ -102,7 +102,6 @@ class DiagGaussian(BaseDistribution):
         )
         return log_p
 
-    # (20240130 - lance implemented)
     def get_qv(self, z, context=None):
         q = self.log_prob(z, context)
         v = 0
@@ -173,7 +172,6 @@ class ConditionalDiagGaussian(BaseDistribution):
         return q, v
 
 
-# (Roy implemented - 20240128)
 class MyConditionalDiagGaussian(BaseDistribution):
     """
     Conditional multivariate Gaussian distribution with diagonal
@@ -206,7 +204,6 @@ class MyConditionalDiagGaussian(BaseDistribution):
 
     def get_mean_std(self, z, context):
         mean = self.loc(context) if self.loc is not None else torch.zeros_like(z)
-        # (20240227 - Lance modified. Becareful after this change.)
         if self.log_scale is not None:
             sigma = self.log_scale(context)
             sigma = torch.tanh(sigma)
@@ -755,7 +752,6 @@ class GaussianMixture(BaseDistribution):
 
         return log_p
 
-# (20240214 - Lance Implemented)
 class MyGaussianMixture(BaseDistribution):
     """
     Mixture of Gaussians with diagonal covariance matrix

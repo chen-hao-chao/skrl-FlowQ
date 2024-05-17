@@ -231,7 +231,6 @@ class AutoregressiveRationalQuadraticSpline(Flow):
         z, log_det = self.mprqat(z, context=context)
         return z, log_det.view(-1)
     
-    # (Roy implemented - 20240130)
     def get_qv(self, z, context=None):
         z_, log_det = self.inverse(z, context)
         q = log_det

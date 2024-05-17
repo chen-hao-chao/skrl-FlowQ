@@ -32,7 +32,6 @@ class Shift(flows.Flow):
                               device=z.device)
         return z, log_det
 
-# (Lance implemented - 20230117)
 class Scale(flows.Flow):
     def __init__(self, scale=0.5, MaP=False):
         super().__init__()
@@ -83,7 +82,6 @@ class arcTanh(flows.Flow):
             log_det = -torch.log(1-z.pow(2) + self.eps).sum(-1, keepdim=False)
         return z_, log_det
 
-# (Lance implemented - 20240121)
 class Clip(flows.Flow):
     def __init__(self, scale=1, eps=1e-5):
         super().__init__()

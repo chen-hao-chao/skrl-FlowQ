@@ -70,7 +70,7 @@ def main(): # closed
         "sigma_max": tune.grid_search([2.0]),
         "sigma_min": tune.grid_search([-5.0]),
         "id": tune.grid_search([0,1,2, 3,4,5, 6,7,8, 9,10,11]),
-        "path": tune.grid_search(["/mnt/nfs/lance/skrl-FlowQ/runs/results_ant/ebflow/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
+        "path": tune.grid_search(["/mnt/nfs/dir/skrl-FlowQ/runs/results_ant/meow/"]), #/workspace/skrl-FlowQ/runs/results_ebflow_humanoid/   OR   /mnt/nfs/skrl-FlowQ/runs/results_ebflow_humanoid/
     }
     
     analysis = tune.run(

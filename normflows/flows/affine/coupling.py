@@ -267,7 +267,6 @@ class AffineCouplingBlock(Flow):
         return z, log_det_tot
 
 
-# (Roy implemented - 20240128)
 class MaskedCondAffineFlow(Flow):
     """RealNVP as introduced in [arXiv: 1605.08803](https://arxiv.org/abs/1605.08803)
 
