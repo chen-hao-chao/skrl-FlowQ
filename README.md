@@ -4,7 +4,7 @@
 
 ---
 
-### the documentation of SKRL
+### Documentation of SKRL
 
 <strong>https://skrl.readthedocs.io</strong>
 
@@ -32,7 +32,7 @@ PYTHON_PATH tune_ebflow_5.py
 PYTHON_PATH tune_ebflow_6.py
 ```
 
-### Citing SKRL library
+### Citing SKRL Library
 To cite the library in publications, please use the following reference:
 
 ```bibtex
